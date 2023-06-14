@@ -1,70 +1,12 @@
+import cv2
 from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QLabel, QPushButton, QHBoxLayout, \
-    QFileDialog, QMainWindow
+    QFileDialog, QMainWindow, QSlider
 from PyQt6.QtCore import Qt, QPointF, QDir, QSize, pyqtSignal, QFileInfo, QUrl
 from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices
 import sys
-
-
-class ImageView(QGraphicsView):
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-        self.scene = QGraphicsScene(self)
-        self.setScene(self.scene)
-
-        self.zoom_factor = 1.0
-        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-
-    def display_image(self, image_path):
-
-        image = QImage(image_path)
-        pixmap = QPixmap.fromImage(image)
-
-        self.scene.clear()
-        scaled_pixmap = pixmap.scaledToHeight(pixmap.height())
-        self.scene.addPixmap(scaled_pixmap)
-        # self.setZoomFactor(1.0)
-        self.setCenter(QPointF(0, 0))
-
-    def wheelEvent(self, event):
-        zoom_in_factor = 1.25
-        zoom_out_factor = 1 / zoom_in_factor
-
-        if event.angleDelta().y() > 0:
-            self.zoom_factor *= zoom_in_factor
-        else:
-            self.zoom_factor *= zoom_out_factor
-
-        self.setZoomFactor(self.zoom_factor)
-
-    def setZoomFactor(self, zoom_factor):
-        self.resetTransform()
-        self.scale(zoom_factor, zoom_factor)
-
-    def setCenter(self, pos):
-        self.centerOn(pos)
-
-
-class ImageInfo(QWidget):
-
-    def __init__(self):
-        super().__init__()
-
-        self.model_name = QLabel('model: *.onnx')
-        self.image_name_label = QLabel('image name')
-
-        layout = QVBoxLayout()
-        layout.addWidget(self.model_name)
-        layout.addWidget(self.image_name_label)
-
-        self.setLayout(layout)
-
-    def update_image_name(self, image_name):
-        self.image_name_label.setText(image_name)
-
-    def update_model_name(self, model_name):
-        self.model_name.setText(model_name)
+import numpy
+from imageview import ImageView
+from imageinfo import ImageInfo
 
 
 class MainWindow(QMainWindow):
@@ -73,6 +15,12 @@ class MainWindow(QMainWindow):
         self.image_files = []
         self.current_image_index = 0
 
+        # Panel classes
+        self.panel_view = ImageView()
+        self.panel_info = ImageInfo()
+        self.setWindowTitle('Seams Viewer')
+
+        # toolbar
         toolbar = self.addToolBar('File')
         browse_action = QAction("Browse", self)
         browse_action.triggered.connect(self.browse_folder)
@@ -93,7 +41,6 @@ class MainWindow(QMainWindow):
         toolbar.addAction(model_action)
         toolbar.addAction(previous_action)
         toolbar.addAction(next_action)
-
         toolbar.setStyleSheet('''
             QToolBar {
                 background-color: #f2f2f2;
@@ -120,12 +67,49 @@ class MainWindow(QMainWindow):
             }
         ''')
 
-        self.panel_view = ImageView()
-        self.panel_info = ImageInfo()
-        self.setWindowTitle('Seams Viewer')
+        # Brightness slider
+        brightness_slider = QSlider(Qt.Orientation.Horizontal)
+        brightness_slider.setMinimum(-100)
+        brightness_slider.setMaximum(100)
+        brightness_slider.setSingleStep(2)
+        brightness_slider.valueChanged.connect(self.panel_view.set_brightness)
+        brightness_slider.setValue(0)
+        brightness_slider.setStyleSheet("""
+            QSlider {
+                background-color: #D0D0D0;
+                height: 20px;
+                margin: 2px;
+                padding: 2px;
+            }
 
+            QSlider::groove:horizontal {
+                border: none;
+                background-color: #D0D0D0;
+                height: 20px;
+            }
+
+            QSlider::handle:horizontal {
+                background-color: #606060;
+                border: none;
+                width: 35px;
+                height: 35px;
+                margin: -5px 0;
+                border-radius: 5px;
+            }
+        """)
+
+        # main container layout
         layout = QHBoxLayout()
-        layout.addWidget(self.panel_view, 3)
+
+        # layout to contain image viewer and image tools such as the slider
+        image_view_layout = QVBoxLayout()
+        image_view_layout.addWidget(self.panel_view, 5)
+        image_view_layout.addWidget(brightness_slider, 2)
+
+        w_slider = QWidget()
+        w_slider.setLayout(image_view_layout)
+
+        layout.addWidget(w_slider, 5)
         layout.addWidget(self.panel_info, 1)
 
         w = QWidget()
@@ -134,7 +118,7 @@ class MainWindow(QMainWindow):
 
     def browse_folder(self):
 
-        folder_path = QFileDialog.getExistingDirectory(self, "Choose Folder")
+        folder_path = QFileDialog.getExistingDirectory(self, "Choose Folder", 'C:\\Defects\\3220\\Seams')
 
         if not folder_path:
             return
@@ -185,5 +169,5 @@ if __name__ == '__main__':
     #image_window.setPalette(palette)
 
     image_window.show()
-    image_window.resize(QSize(800, 600))
+    image_window.showMaximized()
     sys.exit(app.exec())
