@@ -1,8 +1,8 @@
 import cv2
 from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QLabel, QPushButton, QHBoxLayout, \
-    QFileDialog, QMainWindow, QSlider
+    QFileDialog, QMainWindow, QSlider, QStatusBar, QGraphicsPixmapItem
 from PyQt6.QtCore import Qt, QPointF, QDir, QSize, pyqtSignal, QFileInfo, QUrl
-from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices
+from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices, QColor, QIcon
 import sys
 import numpy
 
@@ -12,6 +12,7 @@ class ImageView(QGraphicsView):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.scene = QGraphicsScene(self)
+        self.scene.setBackgroundBrush(QColor(249, 251, 253, 255))
         self.setScene(self.scene)
 
         self.zoom_factor = 1.0
@@ -22,7 +23,10 @@ class ImageView(QGraphicsView):
         self.setCenter(QPointF(0, 0))
 
         self.image_cvmat = None
-        self.brightness = 50
+        self.height = None
+        self.width = None
+        self.channel = None
+        self.brightness = 0
 
     def display_image(self, image_path):
         self.image_cvmat = cv2.imread(image_path)
@@ -42,10 +46,10 @@ class ImageView(QGraphicsView):
         final_hsv = cv2.merge((h, s, v))
         output_cvmat = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2BGR)
 
-        # Convert and display
-        height, width, channel = output_cvmat.shape
-        bytesPerLine = 3 * width
-        qImg = QImage(output_cvmat.data, width, height, bytesPerLine, QImage.Format.Format_RGB888)
+        # Convert and display from CvMAT to QImage
+        self.height, self.width, self.channel = output_cvmat.shape
+        bytesPerLine = 3 * self.width # attention with the number of channels
+        qImg = QImage(output_cvmat.data, self.width, self.height, bytesPerLine, QImage.Format.Format_RGB888)
         pixmap = QPixmap.fromImage(qImg)
         self.pixmapItem.setPixmap(pixmap)
 
@@ -69,7 +73,6 @@ class ImageView(QGraphicsView):
 
     def set_brightness(self, value):
         """ set the brightness of the current displayed image"""
-
         if self.image_cvmat is None:
             return
 
