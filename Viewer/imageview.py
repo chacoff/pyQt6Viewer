@@ -29,7 +29,8 @@ class ImageView(QGraphicsView):
         self.brightness = 0
 
     def display_image(self, image_path):
-        self.image_cvmat = cv2.imread(image_path)
+        self.image_cvmat = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+        # self.image_cvmat = cv2.cvtColor(self.image_cvmat, cv2.COLOR_BGR2RGB)  # if RGB
         self.updateImageItem()
         self.setImageinCenter()
 

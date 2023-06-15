@@ -1,6 +1,6 @@
 import cv2
 from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QLabel, QPushButton, QHBoxLayout, \
-    QFileDialog, QMainWindow, QSlider, QStatusBar
+    QFileDialog, QMainWindow, QSlider, QStatusBar, QMessageBox
 from PyQt6.QtCore import Qt, QPointF, QDir, QSize, pyqtSignal, QFileInfo, QUrl
 from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices, QColor, QIcon
 import sys
@@ -15,6 +15,7 @@ class MainWindow(QMainWindow):
         self.image_files = []
         self.current_image_index = 0
         self.folder_path = None
+        self.model_path = None
 
         # Model name
         self.model_name = QLabel('Model: *.onnx')
@@ -31,6 +32,7 @@ class MainWindow(QMainWindow):
         browse_action.triggered.connect(self.browse_folder)
         browse_action.setShortcut('o')
         process_action = QAction("Process", self)
+        process_action.triggered.connect(self.process_image)
         process_action.setShortcut('p')
         model_action = QAction("Model", self)
         model_action.triggered.connect(self.browse_model)
@@ -52,8 +54,8 @@ class MainWindow(QMainWindow):
         reset_brightness.triggered.connect(self.reset_brightness)
         reset_brightness.setShortcut('b')
         toolbar.addAction(browse_action)
-        toolbar.addAction(process_action)
         toolbar.addAction(model_action)
+        toolbar.addAction(process_action)
         toolbar.addSeparator()
         toolbar.addAction(center_image_action)
         toolbar.addAction(firstIm_action)
@@ -178,8 +180,18 @@ class MainWindow(QMainWindow):
         if not model_path:
             return
 
+        self.model_path = model_path[0]
         model_name = QFileInfo(model_path[0]).fileName()
         self.update_model_name(f'model: {model_name}')
+
+    def process_image(self):
+        if not self.folder_path:
+            self.error_box('Folder Path', 'Please load a folder with images in BMP or PNG')
+            return
+
+        if not self.model_path:
+            self.error_box('Model Path', 'Please load an ONNX model before to process')
+            return
 
     def show_previous_image(self):
         if self.current_image_index > 0:
@@ -224,6 +236,12 @@ class MainWindow(QMainWindow):
 
     def filename(self):
         return self.image_files[self.current_image_index]
+
+    def error_box(self, title, message):
+        dlg = QMessageBox(self)
+        dlg.setWindowTitle(title)
+        dlg.setText(message)
+        dlg.exec()
 
 
 if __name__ == '__main__':
