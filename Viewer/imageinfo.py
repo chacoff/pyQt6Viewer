@@ -12,12 +12,7 @@ class ImageInfo(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.model_name = QLabel('model: *.onnx')
-
-        title_model = QLabel("Model")
-        title_model.setStyleSheet('''QLabel {font-size: 22px; font-weight: bold; color: #606060;}''')
-
-        classes = self.read_classes_file('includes\\classes.names')
+        classes = self.read_classes_file('src\\classes.names')
 
         table = QTableWidget()
         table.setColumnCount(3)
@@ -46,14 +41,10 @@ class ImageInfo(QWidget):
         table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 
         layout = QVBoxLayout()
-        layout.addWidget(title_model)
-        layout.addWidget(self.model_name)
         layout.addWidget(table)
-        layout.addStretch()
+        # layout.addStretch()
+        layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
-
-    def update_model_name(self, model_name):
-        self.model_name.setText(model_name)
 
     def read_classes_file(self, classes_file_path):
         classes = []

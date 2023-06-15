@@ -12,7 +12,7 @@ class ImageView(QGraphicsView):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.scene = QGraphicsScene(self)
-        self.scene.setBackgroundBrush(QColor(249, 251, 253, 255))
+        # self.scene.setBackgroundBrush(QColor(249, 251, 253, 255))
         self.setScene(self.scene)
 
         self.zoom_factor = 1.0
@@ -31,6 +31,7 @@ class ImageView(QGraphicsView):
     def display_image(self, image_path):
         self.image_cvmat = cv2.imread(image_path)
         self.updateImageItem()
+        self.setImageinCenter()
 
     def updateImageItem(self):
         """ apply brightness and convert from cvmat to QImage """
@@ -71,6 +72,11 @@ class ImageView(QGraphicsView):
     def setCenter(self, pos):
         self.centerOn(pos)
 
+    def setImageinCenter(self):
+        if not self.pixmapItem.pixmap().isNull():
+            self.fitInView(self.pixmapItem, Qt.AspectRatioMode.IgnoreAspectRatio)
+            self.zoom_factor = 1
+
     def set_brightness(self, value):
         """ set the brightness of the current displayed image"""
         if self.image_cvmat is None:
@@ -79,3 +85,7 @@ class ImageView(QGraphicsView):
         if value != self.brightness:
             self.brightness = value
             self.updateImageItem()
+
+    def reset_brightness(self):
+        self.brightness = 0
+        self.updateImageItem()

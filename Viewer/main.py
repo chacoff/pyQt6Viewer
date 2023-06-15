@@ -16,6 +16,10 @@ class MainWindow(QMainWindow):
         self.current_image_index = 0
         self.folder_path = None
 
+        # Model name
+        self.model_name = QLabel('Model: *.onnx')
+        self.model_name.setStyleSheet('''QLabel {font-size: 18px; font-weight: bold; color: #404040;}''')
+
         # Panel classes
         self.panel_view = ImageView()
         self.panel_info = ImageInfo()
@@ -31,6 +35,9 @@ class MainWindow(QMainWindow):
         model_action = QAction("Model", self)
         model_action.triggered.connect(self.browse_model)
         model_action.setShortcut('m')
+        center_image_action = QAction('Reset Center', self)
+        center_image_action.triggered.connect(self.panel_view.setImageinCenter)
+        center_image_action.setShortcut('c')
         firstIm_action = QAction("<< First Image", self)
         firstIm_action.triggered.connect(self.show_first_image)
         previous_action = QAction("< Previous", self)
@@ -41,13 +48,19 @@ class MainWindow(QMainWindow):
         next_action.setShortcut('d')
         lastIm_action = QAction("Last Image >>", self)
         lastIm_action.triggered.connect(self.show_last_image)
+        reset_brightness = QAction('Reset Brightness', self)
+        reset_brightness.triggered.connect(self.reset_brightness)
+        reset_brightness.setShortcut('b')
         toolbar.addAction(browse_action)
         toolbar.addAction(process_action)
         toolbar.addAction(model_action)
+        toolbar.addSeparator()
+        toolbar.addAction(center_image_action)
         toolbar.addAction(firstIm_action)
         toolbar.addAction(previous_action)
         toolbar.addAction(next_action)
         toolbar.addAction(lastIm_action)
+        toolbar.addAction(reset_brightness)
         toolbar.setStyleSheet('''
             QToolBar {
                 background-color: #f2f2f2;
@@ -76,13 +89,13 @@ class MainWindow(QMainWindow):
         toolbar.setMovable(False)
 
         # Brightness slider
-        brightness_slider = QSlider(Qt.Orientation.Horizontal)
-        brightness_slider.setMinimum(-100)
-        brightness_slider.setMaximum(100)
-        brightness_slider.setSingleStep(2)
-        brightness_slider.valueChanged.connect(self.panel_view.set_brightness)
-        brightness_slider.setValue(0)
-        brightness_slider.setStyleSheet("""
+        self.brightness_slider = QSlider(Qt.Orientation.Horizontal)
+        self.brightness_slider.setMinimum(-100)
+        self.brightness_slider.setMaximum(100)
+        self.brightness_slider.setSingleStep(2)
+        self.brightness_slider.valueChanged.connect(self.panel_view.set_brightness)
+        self.brightness_slider.setValue(0)
+        self.brightness_slider.setStyleSheet("""
             QSlider {
                 background-color: #D0D0D0;
                 height: 18px;
@@ -106,23 +119,31 @@ class MainWindow(QMainWindow):
             }
         """)
 
-        # main container layout
-        layout = QHBoxLayout()
+        # Container with 2 horizontal panels
+        layout_2panels = QHBoxLayout()
+
+        # Main vertical container to set a header with model name
+        main_vertical_layout = QVBoxLayout()
+        main_vertical_layout.addWidget(self.model_name, 0)
+        main_vertical_layout.addLayout(layout_2panels)
+        main_vertical_layout.setContentsMargins(16, 16, 16, 16)
 
         # layout to contain image viewer and image tools such as the slider
         image_view_layout = QVBoxLayout()
-        image_view_layout.addWidget(self.panel_view, 5)
-        image_view_layout.addWidget(brightness_slider, 2)
+
+        image_view_layout.addWidget(self.panel_view, 6)
+        image_view_layout.addWidget(self.brightness_slider, 1)
         image_view_layout.addWidget(toolbar, 1)
+        image_view_layout.setContentsMargins(0, 0, 0, 0)
 
         w_slider = QWidget()
         w_slider.setLayout(image_view_layout)
 
-        layout.addWidget(w_slider, 5)
-        layout.addWidget(self.panel_info, 1)
+        layout_2panels.addWidget(w_slider, 5)
+        layout_2panels.addWidget(self.panel_info, 1)
 
         w = QWidget()
-        w.setLayout(layout)
+        w.setLayout(main_vertical_layout)
         self.setCentralWidget(w)
         self.statusBar().showMessage('Ready')
 
@@ -157,8 +178,8 @@ class MainWindow(QMainWindow):
         if not model_path:
             return
 
-        model_name = QFileInfo(model_path[0]).baseName()
-        self.panel_info.update_model_name(f'model: {model_name}')
+        model_name = QFileInfo(model_path[0]).fileName()
+        self.update_model_name(f'model: {model_name}')
 
     def show_previous_image(self):
         if self.current_image_index > 0:
@@ -173,6 +194,7 @@ class MainWindow(QMainWindow):
             self.set_status_bar()
 
     def show_first_image(self):
+        """ show first image in the folder_path """
         if self.folder_path is None:
             return
 
@@ -181,12 +203,24 @@ class MainWindow(QMainWindow):
         self.set_status_bar()
 
     def show_last_image(self):
+        """ show last image in the folder_path"""
         if self.folder_path is None:
             return
 
         self.current_image_index = len(self.image_files) - 1
         self.panel_view.display_image(self.filename())
         self.set_status_bar()
+
+    def reset_brightness(self):
+        """ reset slider and brightness """
+        if self.folder_path is None:
+            return
+
+        self.brightness_slider.setValue(0)
+        self.panel_view.reset_brightness()
+
+    def update_model_name(self, model_name):
+        self.model_name.setText(model_name)
 
     def filename(self):
         return self.image_files[self.current_image_index]
