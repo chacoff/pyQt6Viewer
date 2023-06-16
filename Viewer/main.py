@@ -7,6 +7,7 @@ import sys
 import numpy
 from imageview import ImageView
 from imageinfo import ImageInfo
+from src.yolov5_seams import *
 
 
 class MainWindow(QMainWindow):
@@ -16,14 +17,17 @@ class MainWindow(QMainWindow):
         self.current_image_index = 0
         self.folder_path = None
         self.model_path = None
+        self.net = None
+        self.classes = None
 
         # Model name
         self.model_name = QLabel('Model: *.onnx')
         self.model_name.setStyleSheet('''QLabel {font-size: 18px; font-weight: bold; color: #404040;}''')
 
-        # Panel classes
+        # Panel Py-classes
         self.panel_view = ImageView()
         self.panel_info = ImageInfo()
+        self.inference = YoloV5sSeams()
         self.setWindowTitle('Seams Viewer')
 
         # toolbar
@@ -174,7 +178,7 @@ class MainWindow(QMainWindow):
             self.set_status_bar()
 
     def browse_model(self):
-        default = 'C:\\Users\\gomezja\\PycharmProjects\\201_SeamsModel\\runs\\onnx_testedModels'
+        default = '.\\src'
         model_path = QFileDialog.getOpenFileName(self, 'Choose Onnx Model', default, 'Onnx files (*.onnx)')
 
         if not model_path:
@@ -184,6 +188,20 @@ class MainWindow(QMainWindow):
         model_name = QFileInfo(model_path[0]).fileName()
         self.update_model_name(f'model: {model_name}')
 
+        # load immediately in memory ... Alexandre will love it
+        self.net = cv2.dnn.readNet(self.model_path)
+        self.classes = self.load_classes_names()
+
+    @staticmethod
+    def load_classes_names():
+        with open('src\\classes.names', 'rt') as f:
+            classes = f.read().rstrip('\n').split('\n')
+
+        """ @jaime: because my classes.names contains also color and threshold split by ',' and i am dropping rollprints
+        because there is only 5 classes for the moment """
+        classes = [x.split(',')[0] for x in classes][:-1]
+        return classes
+
     def process_image(self):
         if not self.folder_path:
             self.error_box('Folder Path', 'Please load a folder with images in BMP or PNG')
@@ -192,6 +210,13 @@ class MainWindow(QMainWindow):
         if not self.model_path:
             self.error_box('Model Path', 'Please load an ONNX model before to process')
             return
+
+        frame = self.panel_view.image_cvmat
+        detections = self.inference.pre_process(frame, self.net)
+        img = self.inference.post_process(frame.copy(), detections, self.classes)
+        t, _ = self.net.getPerfProfile()
+        label = 'Inference time: %.2f ms' % (t * 1000.0 / cv2.getTickFrequency())
+        print(label)
 
     def show_previous_image(self):
         if self.current_image_index > 0:

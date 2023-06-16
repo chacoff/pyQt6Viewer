@@ -12,15 +12,15 @@ class ImageInfo(QWidget):
     def __init__(self):
         super().__init__()
 
-        classes = self.read_classes_file('src\\classes.names')
+        self.classes = self.read_classes_file('src\\classes.names')
 
         table = QTableWidget()
         table.setColumnCount(3)
-        table.setRowCount(len(classes))
+        table.setRowCount(len(self.classes))
         table.setHorizontalHeaderLabels(['Class', 'Color', 'Threshold'])
         table.verticalHeader().setVisible(False)
 
-        for row, (name, color, thre) in enumerate(classes):
+        for row, (name, color, thre) in enumerate(self.classes):
             # Set the name in the left column
             name_item = QTableWidgetItem(name)
             name_item.setFlags(Qt.ItemFlag.ItemIsEnabled)

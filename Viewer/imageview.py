@@ -17,6 +17,7 @@ class ImageView(QGraphicsView):
 
         self.zoom_factor = 1.0
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
         self.pixmapItem = self.scene.addPixmap(QPixmap())
         self.setZoomFactor(1.0)
