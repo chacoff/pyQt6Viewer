@@ -22,7 +22,10 @@ class MainWindow(QMainWindow):
 
         # Model name
         self.model_name = QLabel('Model: *.onnx')
-        self.model_name.setStyleSheet('''QLabel {font-size: 18px; font-weight: bold; color: #404040;}''')
+        self.model_name.setStyleSheet('''QLabel {font-size: 18px; font-weight: bold; color: #606060;}''')
+
+        self.inference_time = QLabel('Inference time: 0.00 ms')
+        self.inference_time.setStyleSheet('''QLabel {font-size: 18px; font-weight: bold; color: #FF8040;}''')
 
         # Panel Py-classes
         self.panel_view = ImageView()
@@ -41,14 +44,14 @@ class MainWindow(QMainWindow):
         model_action = QAction("Model", self)
         model_action.triggered.connect(self.browse_model)
         model_action.setShortcut('m')
-        center_image_action = QAction('Reset Center', self)
-        center_image_action.triggered.connect(self.panel_view.setImageinCenter)
-        center_image_action.setShortcut('c')
         firstIm_action = QAction("<< First Image", self)
         firstIm_action.triggered.connect(self.show_first_image)
         previous_action = QAction("< Previous", self)
         previous_action.triggered.connect(self.show_previous_image)
         previous_action.setShortcut('a')
+        center_image_action = QAction('Reset Zoom', self)
+        center_image_action.triggered.connect(self.panel_view.setImageinCenter)
+        center_image_action.setShortcut('c')
         next_action = QAction("Next >", self)
         next_action.triggered.connect(self.show_next_image)
         next_action.setShortcut('d')
@@ -61,9 +64,9 @@ class MainWindow(QMainWindow):
         toolbar.addAction(model_action)
         toolbar.addAction(process_action)
         toolbar.addSeparator()
-        toolbar.addAction(center_image_action)
         toolbar.addAction(firstIm_action)
         toolbar.addAction(previous_action)
+        toolbar.addAction(center_image_action)
         toolbar.addAction(next_action)
         toolbar.addAction(lastIm_action)
         toolbar.addAction(reset_brightness)
@@ -130,7 +133,8 @@ class MainWindow(QMainWindow):
 
         # Main vertical container to set a header with model name
         main_vertical_layout = QVBoxLayout()
-        main_vertical_layout.addWidget(self.model_name, 0)
+        main_vertical_layout.addWidget(self.model_name)
+        main_vertical_layout.addWidget(self.inference_time)
         main_vertical_layout.addLayout(layout_2panels)
         main_vertical_layout.setContentsMargins(16, 16, 16, 16)
 
@@ -186,7 +190,7 @@ class MainWindow(QMainWindow):
 
         self.model_path = model_path[0]
         model_name = QFileInfo(model_path[0]).fileName()
-        self.update_model_name(f'model: {model_name}')
+        self.update_model_name(f'Model: {model_name}')
 
         # load immediately in memory ... Alexandre will love it
         self.net = cv2.dnn.readNet(self.model_path)
@@ -215,19 +219,20 @@ class MainWindow(QMainWindow):
         detections = self.inference.pre_process(frame, self.net)
         img = self.inference.post_process(frame.copy(), detections, self.classes)
         t, _ = self.net.getPerfProfile()
-        label = 'Inference time: %.2f ms' % (t * 1000.0 / cv2.getTickFrequency())
-        print(label)
+        self.update_inference_time(t)
 
     def show_previous_image(self):
         if self.current_image_index > 0:
             self.current_image_index -= 1
             self.panel_view.display_image(self.filename())
+            self.update_inference_time(0.0)
             self.set_status_bar()
 
     def show_next_image(self):
         if self.current_image_index < len(self.image_files) - 1:
             self.current_image_index += 1
             self.panel_view.display_image(self.filename())
+            self.update_inference_time(0.0)
             self.set_status_bar()
 
     def show_first_image(self):
@@ -237,6 +242,7 @@ class MainWindow(QMainWindow):
 
         self.current_image_index = 0
         self.panel_view.display_image(self.filename())
+        self.update_inference_time(0.0)
         self.set_status_bar()
 
     def show_last_image(self):
@@ -246,6 +252,7 @@ class MainWindow(QMainWindow):
 
         self.current_image_index = len(self.image_files) - 1
         self.panel_view.display_image(self.filename())
+        self.update_inference_time(0.0)
         self.set_status_bar()
 
     def reset_brightness(self):
@@ -254,10 +261,14 @@ class MainWindow(QMainWindow):
             return
 
         self.brightness_slider.setValue(0)
-        self.panel_view.reset_brightness()
+        self.panel_view.set_brightness(0)
 
     def update_model_name(self, model_name):
         self.model_name.setText(model_name)
+
+    def update_inference_time(self, t):
+        label = 'Inference time: %.2f ms' % (t * 1000.0 / cv2.getTickFrequency())
+        self.inference_time.setText(label)
 
     def filename(self):
         return self.image_files[self.current_image_index]

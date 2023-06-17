@@ -20,8 +20,9 @@ class ImageView(QGraphicsView):
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
         self.pixmapItem = self.scene.addPixmap(QPixmap())
+        self.scene_pos = QPointF(0, 0)
         self.setZoomFactor(1.0)
-        self.setCenter(QPointF(0, 0))
+        self.centerOn(QPointF(0, 0))
 
         self.image_cvmat = None
         self.height = None
@@ -57,7 +58,7 @@ class ImageView(QGraphicsView):
         self.pixmapItem.setPixmap(pixmap)
 
     def wheelEvent(self, event):
-        zoom_in_factor = 1.25
+        zoom_in_factor = 1.15
         zoom_out_factor = 1 / zoom_in_factor
 
         if event.angleDelta().y() > 0:
@@ -65,14 +66,12 @@ class ImageView(QGraphicsView):
         else:
             self.zoom_factor *= zoom_out_factor
 
+        self.scene_pos = event.position()  # @TODO zoom in and out according mouse pointer
         self.setZoomFactor(self.zoom_factor)
 
     def setZoomFactor(self, zoom_factor):
         self.resetTransform()
         self.scale(zoom_factor, zoom_factor)
-
-    def setCenter(self, pos):
-        self.centerOn(pos)
 
     def setImageinCenter(self):
         if not self.pixmapItem.pixmap().isNull():
@@ -88,6 +87,7 @@ class ImageView(QGraphicsView):
             self.brightness = value
             self.updateImageItem()
 
-    def reset_brightness(self):
-        self.brightness = 0
-        self.updateImageItem()
+        if value == 0:
+            self.brightness = 0
+            self.updateImageItem()
+
