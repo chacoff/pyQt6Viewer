@@ -1,8 +1,8 @@
 import cv2
 from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QLabel, QPushButton, QHBoxLayout, \
-    QFileDialog, QMainWindow, QSlider, QStatusBar, QGraphicsPixmapItem
-from PyQt6.QtCore import Qt, QPointF, QDir, QSize, pyqtSignal, QFileInfo, QUrl
-from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices, QColor, QIcon
+    QFileDialog, QMainWindow, QSlider, QStatusBar, QGraphicsPixmapItem, QGraphicsItem, QGraphicsRectItem
+from PyQt6.QtCore import Qt, QPointF, QDir, QSize, pyqtSignal, QFileInfo, QUrl, QRectF
+from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices, QColor, QIcon, QPen
 import sys
 import numpy
 
@@ -30,7 +30,34 @@ class ImageView(QGraphicsView):
         self.channel = None
         self.brightness = 0
 
+    def draw_boxes_and_labels(self, indices, class_ids, confidences, boxes, classes):
+
+        for i in indices:
+            box = boxes[i]
+            left = box[0]
+            top = box[1]
+            width = box[2]
+            height = box[3]
+            message = "{}:{:.2f}".format(classes[class_ids[i]], confidences[i])  # TODO: dont draw, use it with itemclicked
+            label = classes[class_ids[i]]
+
+            rect_item = QGraphicsRectItem(QRectF(QPointF(left, top), QPointF(left+width, top+height)))
+
+            # TODO improve the classes.names loading to pass all those variables at once, this is just the first try
+            if label == 'Seams':
+                pen = QPen(Qt.GlobalColor.green)
+            elif label == 'Beam':
+                pen = QPen(Qt.GlobalColor.darkCyan)
+            else:
+                pen = QPen(Qt.GlobalColor.red)
+
+            pen.setWidth(4)
+            rect_item.setPen(pen)
+            # rect_item.setFlag(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
+            self.scene.addItem(rect_item)
+
     def display_image(self, image_path):
+        """" load an image and update the scene """
         self.image_cvmat = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
         self.image_cvmat = cv2.cvtColor(self.image_cvmat, cv2.COLOR_BGR2RGB)  # if RGB
         self.updateImageItem()

@@ -11,8 +11,8 @@ class ImageInfo(QWidget):
 
     def __init__(self):
         super().__init__()
-
-        self.classes = self.read_classes_file('src\\classes.names')
+        self.classes = []
+        self.read_classes_file('src\\classes.names')
 
         table = QTableWidget()
         table.setColumnCount(3)
@@ -47,12 +47,10 @@ class ImageInfo(QWidget):
         self.setLayout(layout)
 
     def read_classes_file(self, classes_file_path):
-        classes = []
         with open(classes_file_path, 'r') as file:
             lines = file.readlines()
             for line in lines:
                 name, color, thre = line.strip().split(',')
                 color = color.split(';')
                 r, g, b = map(int, color)
-                classes.append((name, QColor(r, g, b), thre))
-        return classes
+                self.classes.append((name, QColor(r, g, b), thre))

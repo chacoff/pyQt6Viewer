@@ -198,6 +198,7 @@ class MainWindow(QMainWindow):
 
     @staticmethod
     def load_classes_names():
+        """ return a vector with the classes name -> Alexandre, is not the same as in ImageInfo()"""
         with open('src\\classes.names', 'rt') as f:
             classes = f.read().rstrip('\n').split('\n')
 
@@ -217,9 +218,10 @@ class MainWindow(QMainWindow):
 
         frame = self.panel_view.image_cvmat
         detections = self.inference.pre_process(frame, self.net)
-        img = self.inference.post_process(frame.copy(), detections, self.classes)
+        indices, class_ids, confidences, boxes = self.inference.post_process(frame.copy(), detections, self.classes)
         t, _ = self.net.getPerfProfile()
         self.update_inference_time(t)
+        self.panel_view.draw_boxes_and_labels(indices, class_ids, confidences, boxes, self.classes)
 
     def show_previous_image(self):
         if self.current_image_index > 0:
