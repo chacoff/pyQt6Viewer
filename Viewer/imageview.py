@@ -30,6 +30,11 @@ class ImageView(QGraphicsView):
         self.channel = None
         self.brightness = 0
         self.message_on_click = f'empty'
+        self.seams_counter = 0
+        self.beam_counter = 0
+        self.souflure_counter = 0
+        self.hole_counter = 0
+        self.water_counter = 0
         self.rect_items = []
 
     def draw_boxes_and_labels(self, indices, class_ids, confidences, boxes, classes, colors):
@@ -44,7 +49,18 @@ class ImageView(QGraphicsView):
             width = box[2]
             height = box[3]
             self.message_on_click = "{}:{:.2f}".format(classes[class_ids[i]], confidences[i])  # TODO: dont draw, use it with itemclicked
+
             label = classes[class_ids[i]]
+            if label == 'Seams':
+                self.seams_counter += 1
+            elif label == 'Beam':
+                self.beam_counter += 1
+            elif label == 'Hole':
+                self.hole_counter += 1
+            elif label == 'Souflure':
+                self.souflure_counter += 1
+            elif label == 'Water':
+                self.water_counter += 1
 
             rect_item = QGraphicsRectItem(QRectF(QPointF(left, top), QPointF(left+width, top+height)))
             pen = QPen(colors[class_ids[i]])
@@ -53,6 +69,10 @@ class ImageView(QGraphicsView):
             # rect_item.setFlag(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
             self.scene.addItem(rect_item)
             self.rect_items.append(rect_item)
+
+    def return_statistics(self):
+        """ return statistics of detected objects """
+        return [self.seams_counter, self.beam_counter, self.souflure_counter, self.hole_counter, self.water_counter]
 
     def remove_existing_items(self):
         for item in self.rect_items:

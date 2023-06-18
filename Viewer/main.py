@@ -33,7 +33,7 @@ class MainWindow(QMainWindow):
         self.panel_view = ImageView()
         self.panel_info = ImageInfo()
         self.inference = YoloV5sSeams()
-        self.setWindowTitle('Seams Viewer')
+        self.setWindowTitle('Seams Processor Viewer - v1.00j - RDEsch')
 
         # toolbar
         toolbar = self.addToolBar('Menu')
@@ -237,6 +237,8 @@ class MainWindow(QMainWindow):
         t, _ = self.net.getPerfProfile()
         self.update_inference_time(t)
         self.panel_view.draw_boxes_and_labels(indices, class_ids, confidences, boxes, self.classes, self.classes_color)
+        stats_numbers = self.panel_view.return_statistics()
+        self.panel_info.update_statistics(self.classes, stats_numbers, self.classes_color)
 
     def show_previous_image(self):
         if self.current_image_index > 0:
