@@ -29,8 +29,13 @@ class ImageView(QGraphicsView):
         self.width = None
         self.channel = None
         self.brightness = 0
+        self.message_on_click = f'empty'
+        self.rect_items = []
 
-    def draw_boxes_and_labels(self, indices, class_ids, confidences, boxes, classes):
+    def draw_boxes_and_labels(self, indices, class_ids, confidences, boxes, classes, colors):
+        """ draw bounding boxes around the detected defects """
+
+        self.remove_existing_items()
 
         for i in indices:
             box = boxes[i]
@@ -38,26 +43,27 @@ class ImageView(QGraphicsView):
             top = box[1]
             width = box[2]
             height = box[3]
-            message = "{}:{:.2f}".format(classes[class_ids[i]], confidences[i])  # TODO: dont draw, use it with itemclicked
+            self.message_on_click = "{}:{:.2f}".format(classes[class_ids[i]], confidences[i])  # TODO: dont draw, use it with itemclicked
             label = classes[class_ids[i]]
 
             rect_item = QGraphicsRectItem(QRectF(QPointF(left, top), QPointF(left+width, top+height)))
-
-            # TODO improve the classes.names loading to pass all those variables at once, this is just the first try
-            if label == 'Seams':
-                pen = QPen(Qt.GlobalColor.green)
-            elif label == 'Beam':
-                pen = QPen(Qt.GlobalColor.darkCyan)
-            else:
-                pen = QPen(Qt.GlobalColor.red)
-
-            pen.setWidth(4)
+            pen = QPen(colors[class_ids[i]])
+            pen.setWidth(2)
             rect_item.setPen(pen)
             # rect_item.setFlag(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
             self.scene.addItem(rect_item)
+            self.rect_items.append(rect_item)
+
+    def remove_existing_items(self):
+        for item in self.rect_items:
+            self.scene.removeItem(item)
+        self.rect_items = []
 
     def display_image(self, image_path):
-        """" load an image and update the scene """
+        """" load an image and update the scene: removes all rect_items and sets a new photo """
+
+        self.remove_existing_items()
+
         self.image_cvmat = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
         self.image_cvmat = cv2.cvtColor(self.image_cvmat, cv2.COLOR_BGR2RGB)  # if RGB
         self.updateImageItem()
@@ -79,7 +85,7 @@ class ImageView(QGraphicsView):
 
         # Convert and display from CvMAT to QImage
         self.height, self.width, self.channel = output_cvmat.shape
-        bytesPerLine = 3 * self.width # attention with the number of channels
+        bytesPerLine = 3 * self.width  # attention with the number of channels
         qImg = QImage(output_cvmat.data, self.width, self.height, bytesPerLine, QImage.Format.Format_RGB888)
         pixmap = QPixmap.fromImage(qImg)
         self.pixmapItem.setPixmap(pixmap)

@@ -18,7 +18,9 @@ class MainWindow(QMainWindow):
         self.folder_path = None
         self.model_path = None
         self.net = None
-        self.classes = None
+        self.classes = []
+        self.classes_color = []
+        self.classes_thre = []
 
         # Model name
         self.model_name = QLabel('Model: *.onnx')
@@ -165,7 +167,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(message)
 
     def browse_folder(self):
-        default = 'C:\\Defects\\3220\\Seams'
+        default = 'C:\\Users\\gomezja\\PycharmProjects\\201_SeamsModel\\dataset\\dev'
         self.folder_path = QFileDialog.getExistingDirectory(self, "Choose Folder", default)
 
         if not self.folder_path:
@@ -194,18 +196,27 @@ class MainWindow(QMainWindow):
 
         # load immediately in memory ... Alexandre will love it
         self.net = cv2.dnn.readNet(self.model_path)
-        self.classes = self.load_classes_names()
+        self.read_classes_file()
 
-    @staticmethod
-    def load_classes_names():
-        """ return a vector with the classes name -> Alexandre, is not the same as in ImageInfo()"""
-        with open('src\\classes.names', 'rt') as f:
-            classes = f.read().rstrip('\n').split('\n')
+    def read_classes_file(self):
+        """ classes.names contains also color and threshold """
+        classes_names_raw = []
+        with open('src\\classes.names', 'rt') as file:
+            lines = file.readlines()
+            for line in lines:
+                name, color, thre = line.strip().split(',')
+                color = color.split(';')
+                r, g, b = map(int, color)
+                classes_names_raw.append((name, QColor(r, g, b), thre))
 
-        """ @jaime: because my classes.names contains also color and threshold split by ',' and i am dropping rollprints
-        because there is only 5 classes for the moment """
-        classes = [x.split(',')[0] for x in classes][:-1]
-        return classes
+            # @jaime: i am dropping rollprints because there is only 5 classes for the moment
+            classes_names_raw = classes_names_raw[:-1]
+            self.panel_info.update_classes_names_view(classes_names_raw)
+
+            for row, (name, color, thre) in enumerate(classes_names_raw):
+                self.classes.append(name)
+                self.classes_color.append(color)
+                self.classes_thre.append(thre)
 
     def process_image(self):
         if not self.folder_path:
@@ -216,12 +227,16 @@ class MainWindow(QMainWindow):
             self.error_box('Model Path', 'Please load an ONNX model before to process')
             return
 
-        frame = self.panel_view.image_cvmat
+        frame = self.panel_view.image_cvmat  # gets the current image on the scene
+
+        # Actual processing
         detections = self.inference.pre_process(frame, self.net)
         indices, class_ids, confidences, boxes = self.inference.post_process(frame.copy(), detections, self.classes)
+
+        # Drawing and updating info
         t, _ = self.net.getPerfProfile()
         self.update_inference_time(t)
-        self.panel_view.draw_boxes_and_labels(indices, class_ids, confidences, boxes, self.classes)
+        self.panel_view.draw_boxes_and_labels(indices, class_ids, confidences, boxes, self.classes, self.classes_color)
 
     def show_previous_image(self):
         if self.current_image_index > 0:

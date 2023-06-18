@@ -11,46 +11,39 @@ class ImageInfo(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.classes = []
-        self.read_classes_file('src\\classes.names')
-
-        table = QTableWidget()
-        table.setColumnCount(3)
-        table.setRowCount(len(self.classes))
-        table.setHorizontalHeaderLabels(['Class', 'Color', 'Threshold'])
-        table.verticalHeader().setVisible(False)
-
-        for row, (name, color, thre) in enumerate(self.classes):
-            # Set the name in the left column
-            name_item = QTableWidgetItem(name)
-            name_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
-            table.setItem(row, 0, name_item)
-
-            # Set the color in the right column
-            color_item = QTableWidgetItem()
-            color_item.setBackground(color)
-            color_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
-            table.setItem(row, 1, color_item)
-
-            thre_item = QTableWidgetItem(thre)
-            # thre_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
-            table.setItem(row, 2, thre_item)
-
-        table.resizeColumnsToContents()
-        table.resizeRowsToContents()
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.classes_names = []
+        self.table = QTableWidget()
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(['Class', 'Color', 'Threshold'])
+        self.table.verticalHeader().setVisible(False)
 
         layout = QVBoxLayout()
-        layout.addWidget(table)
-        # layout.addStretch()
+        layout.addWidget(self.table)
+        layout.addStretch()
+        layout.addStretch()
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
-    def read_classes_file(self, classes_file_path):
-        with open(classes_file_path, 'r') as file:
-            lines = file.readlines()
-            for line in lines:
-                name, color, thre = line.strip().split(',')
-                color = color.split(';')
-                r, g, b = map(int, color)
-                self.classes.append((name, QColor(r, g, b), thre))
+    def update_classes_names_view(self, classes_names):
+        """ update the available classes upon loading the model based on classes.names"""
+
+        self.classes_names = classes_names
+        self.table.setRowCount(len(self.classes_names))
+
+        for row, (name, color, thre) in enumerate(self.classes_names):
+            name_item = QTableWidgetItem(name)
+            name_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
+            self.table.setItem(row, 0, name_item)
+
+            color_item = QTableWidgetItem()
+            color_item.setBackground(color)
+            color_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
+            self.table.setItem(row, 1, color_item)
+
+            thre_item = QTableWidgetItem(thre)
+            # thre_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
+            self.table.setItem(row, 2, thre_item)
+
+        self.table.resizeColumnsToContents()
+        self.table.resizeRowsToContents()
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
