@@ -26,9 +26,10 @@ class ImageInfo(QWidget):
         image_logo.setPixmap(QPixmap.fromImage(QImage("includes/logoAM.png")))
 
         layout = QVBoxLayout()
-        layout.addWidget(self.table)
-        layout.addWidget(self.stats.plot_widget)
-        layout.addWidget(image_logo, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.table, 2)
+        layout.addWidget(self.stats.plot_widget, 2)
+        layout.addStretch(1)
+        # layout.addWidget(image_logo, 1, alignment=Qt.AlignmentFlag.AlignCenter)
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.setLayout(layout)

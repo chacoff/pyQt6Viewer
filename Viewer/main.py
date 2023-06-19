@@ -1,3 +1,5 @@
+import os
+
 import cv2
 from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QLabel, QPushButton, QHBoxLayout, \
     QFileDialog, QMainWindow, QSlider, QStatusBar, QMessageBox
@@ -168,7 +170,12 @@ class MainWindow(QMainWindow):
 
     def browse_folder(self):
         default = 'C:\\Users\\gomezja\\PycharmProjects\\201_SeamsModel\\dataset\\dev'
-        self.folder_path = QFileDialog.getExistingDirectory(self, "Choose Folder", default)
+
+        alex = True
+        if alex:
+            self.folder_path = default
+        else:
+            self.folder_path = QFileDialog.getExistingDirectory(self, "Choose Folder", default)
 
         if not self.folder_path:
             return
@@ -185,17 +192,24 @@ class MainWindow(QMainWindow):
 
     def browse_model(self):
         default = '.\\src'
-        model_path = QFileDialog.getOpenFileName(self, 'Choose Onnx Model', default, 'Onnx files (*.onnx)')
+
+        alex = True
+        if alex:
+            model_path = os.path.join('c:\\','Users','gomezja', 'PycharmProjects', '202_SeamsProcessing','Viewer', 'src', 'best_exp18_768_5c_onnx7.onnx')
+            self.model_path = model_path
+            model_name = model_path.split('\\')[-1]
+        else:
+            model_path = QFileDialog.getOpenFileName(self, 'Choose Onnx Model', default, 'Onnx files (*.onnx)')
+            self.model_path = model_path[0]
+            model_name = QFileInfo(model_path[0]).fileName()
 
         if not model_path:
             return
 
-        self.model_path = model_path[0]
-        model_name = QFileInfo(model_path[0]).fileName()
         self.update_model_name(f'Model: {model_name}')
-
+        print(self.model_path)
         # load immediately in memory ... Alexandre will love it
-        self.net = cv2.dnn.readNet(self.model_path)
+        self.net = cv2.dnn.readNetFromONNX(self.model_path)
         self.read_classes_file()
 
     def read_classes_file(self):
@@ -237,7 +251,7 @@ class MainWindow(QMainWindow):
         t, _ = self.net.getPerfProfile()
         self.update_inference_time(t)
         self.panel_view.draw_boxes_and_labels(indices, class_ids, confidences, boxes, self.classes, self.classes_color)
-        stats_numbers = self.panel_view.return_statistics()
+        stats_numbers = self.panel_view.return_statistics()  # these are made during every process
         self.panel_info.update_statistics(self.classes, stats_numbers, self.classes_color)
 
     def show_previous_image(self):
