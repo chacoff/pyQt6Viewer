@@ -29,14 +29,9 @@ class ImageView(QGraphicsView):
         self.width = None
         self.channel = None
         self.brightness = 0
-        self.seams_counter = 0
-        self.beam_counter = 0
-        self.souflure_counter = 0
-        self.hole_counter = 0
-        self.water_counter = 0
         self.rect_items = []
 
-    def draw_boxes_and_labels(self, predictions, classes, colors):
+    def draw_boxes_and_labels(self, predictions, colors):
         """ draw bounding boxes around the detected defects """
 
         self.remove_existing_items()
@@ -48,31 +43,15 @@ class ImageView(QGraphicsView):
             right = predictions[i].bbox[3]
             bottom = predictions[i].bbox[2]
 
-            if predictions[i].class_id == 0:
-                self.seams_counter += 1
-            elif predictions[i].class_id == 1:
-                self.beam_counter += 1
-            elif predictions[i].class_id == 2:
-                self.hole_counter += 1
-            elif predictions[i].class_id == 3:
-                self.souflure_counter += 1
-            elif predictions[i].class_id == 4:
-                self.water_counter += 1
-
             rect_item = QGraphicsRectItem(QRectF(QPointF(top, left), QPointF(bottom, right)))
             tool_tip = "{} - {:.2f}".format(predictions[i].class_name, predictions[i].confidence)
             rect_item.setToolTip(tool_tip)
             pen = QPen(colors[predictions[i].class_id])
-            pen.setWidth(2)
+            pen.setWidth(3)
             rect_item.setPen(pen)
 
-            # rect_item.setFlag(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
             self.scene.addItem(rect_item)
             self.rect_items.append(rect_item)
-
-    def return_statistics(self):
-        """ return statistics of detected objects """
-        return [self.seams_counter, self.beam_counter, self.souflure_counter, self.hole_counter, self.water_counter]
 
     def remove_existing_items(self):
         for item in self.rect_items:

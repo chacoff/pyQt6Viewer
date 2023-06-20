@@ -35,8 +35,8 @@ class ImageInfo(QWidget):
         self.setLayout(layout)
 
     def update_statistics(self, classes, incidences, colors):
-        # classes = ["seams", "beam", "souflure", "hole", "water"]
-        # incidences = [0, 0, 0, 0, 0]
+        """ updates the plot with statistics of single ocurrences """
+
         self.stats.get_classes(classes)
         self.stats.get_incidences(incidences)
         self.stats.setup_plot(colors)
@@ -45,7 +45,6 @@ class ImageInfo(QWidget):
         """ update the available classes upon loading the model based on classes.names"""
 
         self.classes_names = classes_names
-
         self.table.setRowCount(len(self.classes_names))
 
         for row, (name, color, thre) in enumerate(self.classes_names):

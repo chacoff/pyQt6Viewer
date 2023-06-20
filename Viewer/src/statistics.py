@@ -1,4 +1,5 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget
+from pyqtgraph.Qt import QtGui
 import pyqtgraph as pg
 
 
@@ -10,13 +11,11 @@ class StatisticsPlot(QWidget):
 
         self.plot_widget = pg.PlotWidget()
         self.plot_widget.setBackground('w')
-        # self.setCentralWidget(self.plot_widget)
         self.plot_widget.hideAxis('left')
         self.plot_widget.hideAxis('right')
         self.plot_widget.hideAxis('bottom')
         self.plot_widget.setMouseEnabled(x=False, y=False)
         self.plot_widget.setStyleSheet(" margin:0px; border:1px solid rgb(130, 135, 144); ")
-        # self.setup_plot()
 
     def setup_plot(self, colors):
         """ set up and update defect counter """
@@ -35,10 +34,15 @@ class StatisticsPlot(QWidget):
 
         for i, incidence in enumerate(self.incidences):
 
-            label = pg.TextItem(text=f'{incidence}',  # f'{self.classes[i]}: {incidence}',
+            counter = pg.TextItem(text=f'{incidence}',  # f'{self.classes[i]}: {incidence}',
                                 color='w',
                                 anchor=(0.5, 0))
-            label.setPos(i, incidence)
+            counter.setPos(i, incidence)
+            self.plot_widget.addItem(counter)
+
+        x_axis_labels = [pg.TextItem(text=class_, anchor=(0.5, 0), color='#828790') for class_ in self.classes]
+        for i, label in enumerate(x_axis_labels):
+            label.setPos(i, 0)
             self.plot_widget.addItem(label)
 
     def get_classes(self, classes):

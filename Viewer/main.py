@@ -23,6 +23,8 @@ class MainWindow(QMainWindow):
         self.classes = []
         self.classes_color = []
         self.classes_thre = []
+        self.counters = [0]
+        self.alex = True  # fast mode for desperators
 
         # Model name
         self.model_name = QLabel('Model: *.onnx')
@@ -171,8 +173,7 @@ class MainWindow(QMainWindow):
     def browse_folder(self):
         default = 'C:\\Users\\gomezja\\PycharmProjects\\201_SeamsModel\\dataset\\dev'
 
-        alex = False
-        if alex:
+        if self.alex:
             self.folder_path = default
         else:
             self.folder_path = QFileDialog.getExistingDirectory(self, "Choose Folder", default)
@@ -193,8 +194,7 @@ class MainWindow(QMainWindow):
     def browse_model(self):
         default = '.\\src'
 
-        alex = False
-        if alex:
+        if self.alex:
             model_path = os.path.join('c:\\','Users','gomezja', 'PycharmProjects', '202_SeamsProcessing','Viewer', 'src', 'best_exp2_Small_v2_768_5c.onnx')
             self.model_path = model_path
             model_name = model_path.split('\\')[-1]
@@ -207,11 +207,6 @@ class MainWindow(QMainWindow):
             return
 
         self.update_model_name(f'Model: {model_name}')
-
-        # load immediately in memory: deprecated Yolov5Seams only opencv dnn due to new inference service
-        # self.net = cv2.dnn.readNetFromONNX(self.model_path)
-        # self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
-
         self.read_classes_file()
 
     def read_classes_file(self):
@@ -234,6 +229,8 @@ class MainWindow(QMainWindow):
                 self.classes_color.append(color)
                 self.classes_thre.append(thre)
 
+            self.counters = [0] * len(self.classes)  # updates counter's length according the number of classes
+
     def process_image(self):
         if not self.folder_path:
             self.error_box('Folder Path', 'Please load a folder with images in BMP or PNG')
@@ -252,16 +249,14 @@ class MainWindow(QMainWindow):
         t1 = timer()
         self.update_inference_time(t1-t0)
 
-        # Actual processing --> depreacated Yolo5Seams with opencv and dnn
-        # detections = self.inference.pre_process(frame, self.net)
-        # indices, class_ids, confidences, boxes = self.inference.post_process(frame.copy(), detections, self.classes)
-        # Drawing and updating info
-        # t, _ = self.net.getPerfProfile()
-        # self.panel_view.draw_boxes_and_labels(indices, class_ids, confidences, boxes, self.classes, self.classes_color)
+        self.panel_view.draw_boxes_and_labels(predictions, self.classes_color)
+        self.statistics_counter(predictions)
+        self.panel_info.update_statistics(self.classes, self.counters, self.classes_color)
 
-        self.panel_view.draw_boxes_and_labels(predictions, self.classes, self.classes_color)
-        stats_numbers = self.panel_view.return_statistics()  # these are made during every process
-        self.panel_info.update_statistics(self.classes, stats_numbers, self.classes_color)
+    def statistics_counter(self, predictions):
+        for prediction in predictions:
+            class_id = prediction.class_id
+            self.counters[class_id] += 1
 
     def show_previous_image(self):
         if self.current_image_index > 0:
