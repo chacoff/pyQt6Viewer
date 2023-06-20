@@ -1,7 +1,9 @@
-# https://github.com/BlueMirrors/Yolov5-ONNX
+""" https://github.com/BlueMirrors/Yolov5-ONNX
+based on that repo implementation, which is also based in the original ultralytics
+basically i took the repo and i made available parameters such as score, confidence and iou
+J.
+"""
 
-import argparse
-import os
 import cv2
 from cvuMaster.cvu.detector.yolov5 import Yolov5 as Yolov5Onnx
 
@@ -18,7 +20,7 @@ class YoloV5OnnxSeams:
         self.confidence_threshold = 0.20
 
         self.drawing = False
-        self.device = 'cpu'
+        self.device = 'cpu'  # possibility of gpu
         self.weight = None
         self.input_image_path = None
         self.output_image = None
@@ -46,9 +48,10 @@ class YoloV5OnnxSeams:
 
 
 if __name__ == "__main__":
+    """ local usage """
 
     device = 'cpu'  # cpu or gpu
-    weight = 'C:/Users/gomezja/PycharmProjects/202_SeamsProcessing/Viewer/src/best_exp_Nano_v2_768_5c.onnx'
+    weight = './src/best_exp_Nano_v2_768_5c.onnx'
     input_image = 'C:/Users/gomezja/PycharmProjects/201_SeamsModel/dataset/dev/ZH026_2060_009560_TX000021.png'
     output_image = 'test1.png'
     classes = ['Seams', 'Beam', 'Souflure', 'Hole', 'Water']
@@ -69,7 +72,7 @@ if __name__ == "__main__":
         print(predictions[i].bbox)
         print(predictions[i].confidence)
 
-    # for attr, value in object_alexandre.__dict__.items():
-    #     print(attr, value)
+    for attr, value in object_alexandre.__dict__.items():
+        print(attr, value)
 
 
