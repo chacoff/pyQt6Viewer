@@ -37,33 +37,33 @@ class ImageView(QGraphicsView):
         self.water_counter = 0
         self.rect_items = []
 
-    def draw_boxes_and_labels(self, indices, class_ids, confidences, boxes, classes, colors):
+    def draw_boxes_and_labels(self, predictions, classes, colors):
         """ draw bounding boxes around the detected defects """
 
         self.remove_existing_items()
 
-        for i in indices:
-            box = boxes[i]
-            left = box[0]
-            top = box[1]
-            width = box[2]
-            height = box[3]
-            self.message_on_click = "{}:{:.2f}".format(classes[class_ids[i]], confidences[i])  # TODO: dont draw, use it with itemclicked
+        for i in range(len(predictions)):
 
-            label = classes[class_ids[i]]
-            if label == 'Seams':
+            left = predictions[i].bbox[1]
+            top = predictions[i].bbox[0]
+            right = predictions[i].bbox[3]
+            bottom = predictions[i].bbox[2]
+
+            self.message_on_click = "{} - {:.2f}".format(predictions[i].class_name, predictions[i].confidence)  # TODO: dont draw, use it with itemclicked
+
+            if predictions[i].class_name == 'Seams':
                 self.seams_counter += 1
-            elif label == 'Beam':
+            elif predictions[i].class_name == 'Beam':
                 self.beam_counter += 1
-            elif label == 'Hole':
+            elif predictions[i].class_name == 'Hole':
                 self.hole_counter += 1
-            elif label == 'Souflure':
+            elif predictions[i].class_name == 'Souflure':
                 self.souflure_counter += 1
-            elif label == 'Water':
+            elif predictions[i].class_name == 'Water':
                 self.water_counter += 1
 
-            rect_item = QGraphicsRectItem(QRectF(QPointF(left, top), QPointF(left+width, top+height)))
-            pen = QPen(colors[class_ids[i]])
+            rect_item = QGraphicsRectItem(QRectF(QPointF(top, left), QPointF(bottom, right)))
+            pen = QPen(colors[predictions[i].class_id])
             pen.setWidth(2)
             rect_item.setPen(pen)
             # rect_item.setFlag(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)

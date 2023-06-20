@@ -1,5 +1,4 @@
 import os
-
 import cv2
 from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QLabel, QPushButton, QHBoxLayout, \
     QFileDialog, QMainWindow, QSlider, QStatusBar, QMessageBox
@@ -7,9 +6,10 @@ from PyQt6.QtCore import Qt, QPointF, QDir, QSize, pyqtSignal, QFileInfo, QUrl
 from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices, QColor, QIcon
 import sys
 import numpy
+from timeit import default_timer as timer
 from imageview import ImageView
 from imageinfo import ImageInfo
-from src.yolov5_seams import *
+from YoloV5_Onnx_detect import YoloV5OnnxSeams
 
 
 class MainWindow(QMainWindow):
@@ -34,7 +34,7 @@ class MainWindow(QMainWindow):
         # Panel Py-classes
         self.panel_view = ImageView()
         self.panel_info = ImageInfo()
-        self.inference = YoloV5sSeams()
+        self.inference = YoloV5OnnxSeams()
         self.setWindowTitle('Seams Processor Viewer - v1.00j - RDEsch')
 
         # toolbar
@@ -195,7 +195,7 @@ class MainWindow(QMainWindow):
 
         alex = True
         if alex:
-            model_path = os.path.join('c:\\','Users','gomezja', 'PycharmProjects', '202_SeamsProcessing','Viewer', 'src', 'best_exp18_768_5c_onnx7.onnx')
+            model_path = os.path.join('c:\\','Users','gomezja', 'PycharmProjects', '202_SeamsProcessing','Viewer', 'src', 'best_exp_Nano_v2_768_5c.onnx')
             self.model_path = model_path
             model_name = model_path.split('\\')[-1]
         else:
@@ -207,9 +207,11 @@ class MainWindow(QMainWindow):
             return
 
         self.update_model_name(f'Model: {model_name}')
-        print(self.model_path)
-        # load immediately in memory ... Alexandre will love it
-        self.net = cv2.dnn.readNetFromONNX(self.model_path)
+
+        # load immediately in memory: deprecated Yolov5Seams only opencv dnn due to new inference service
+        # self.net = cv2.dnn.readNetFromONNX(self.model_path)
+        # self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
+
         self.read_classes_file()
 
     def read_classes_file(self):
@@ -243,14 +245,21 @@ class MainWindow(QMainWindow):
 
         frame = self.panel_view.image_cvmat  # gets the current image on the scene
 
-        # Actual processing
-        detections = self.inference.pre_process(frame, self.net)
-        indices, class_ids, confidences, boxes = self.inference.post_process(frame.copy(), detections, self.classes)
+        # Actual new processing
+        t0 = timer()
+        self.inference.process_image(self.classes, self.model_path, frame)
+        predictions = self.inference.return_predictions()
+        t1 = timer()
+        self.update_inference_time(t1-t0)
 
+        # Actual processing --> depreacated Yolo5Seams with opencv and dnn
+        # detections = self.inference.pre_process(frame, self.net)
+        # indices, class_ids, confidences, boxes = self.inference.post_process(frame.copy(), detections, self.classes)
         # Drawing and updating info
-        t, _ = self.net.getPerfProfile()
-        self.update_inference_time(t)
-        self.panel_view.draw_boxes_and_labels(indices, class_ids, confidences, boxes, self.classes, self.classes_color)
+        # t, _ = self.net.getPerfProfile()
+        # self.panel_view.draw_boxes_and_labels(indices, class_ids, confidences, boxes, self.classes, self.classes_color)
+
+        self.panel_view.draw_boxes_and_labels(predictions, self.classes, self.classes_color)
         stats_numbers = self.panel_view.return_statistics()  # these are made during every process
         self.panel_info.update_statistics(self.classes, stats_numbers, self.classes_color)
 
@@ -300,7 +309,7 @@ class MainWindow(QMainWindow):
         self.model_name.setText(model_name)
 
     def update_inference_time(self, t):
-        label = 'Inference time: %.2f ms' % (t * 1000.0 / cv2.getTickFrequency())
+        label = 'Inference time: %.2f ms' % (t * 1000.0)
         self.inference_time.setText(label)
 
     def filename(self):
