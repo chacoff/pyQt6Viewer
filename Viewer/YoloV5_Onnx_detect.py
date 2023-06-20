@@ -72,7 +72,7 @@ if __name__ == "__main__":
         print(predictions[i].bbox)
         print(predictions[i].confidence)
 
-    for attr, value in object_alexandre.__dict__.items():
+    for attr, value in predictions.__dict__.items():
         print(attr, value)
 
 
