@@ -171,7 +171,7 @@ class MainWindow(QMainWindow):
     def browse_folder(self):
         default = 'C:\\Users\\gomezja\\PycharmProjects\\201_SeamsModel\\dataset\\dev'
 
-        alex = True
+        alex = False
         if alex:
             self.folder_path = default
         else:
@@ -193,9 +193,9 @@ class MainWindow(QMainWindow):
     def browse_model(self):
         default = '.\\src'
 
-        alex = True
+        alex = False
         if alex:
-            model_path = os.path.join('c:\\','Users','gomezja', 'PycharmProjects', '202_SeamsProcessing','Viewer', 'src', 'best_exp_Nano_v2_768_5c.onnx')
+            model_path = os.path.join('c:\\','Users','gomezja', 'PycharmProjects', '202_SeamsProcessing','Viewer', 'src', 'best_exp2_Small_v2_768_5c.onnx')
             self.model_path = model_path
             model_name = model_path.split('\\')[-1]
         else:

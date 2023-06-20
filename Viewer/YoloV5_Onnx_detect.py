@@ -13,9 +13,9 @@ class YoloV5OnnxSeams:
         # @TODO unused for the moment since all these are hardcode
         self.input_width = 768
         self.input_height = 768
-        self.score_threshold = 0.05
+        self.score_threshold = 0.20
         self.nms_threshold = 0.20
-        self.confidence_threshold = 0.15
+        self.confidence_threshold = 0.20
 
         self.drawing = False
         self.device = 'cpu'

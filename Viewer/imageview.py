@@ -29,7 +29,6 @@ class ImageView(QGraphicsView):
         self.width = None
         self.channel = None
         self.brightness = 0
-        self.message_on_click = f'empty'
         self.seams_counter = 0
         self.beam_counter = 0
         self.souflure_counter = 0
@@ -49,23 +48,24 @@ class ImageView(QGraphicsView):
             right = predictions[i].bbox[3]
             bottom = predictions[i].bbox[2]
 
-            self.message_on_click = "{} - {:.2f}".format(predictions[i].class_name, predictions[i].confidence)  # TODO: dont draw, use it with itemclicked
-
-            if predictions[i].class_name == 'Seams':
+            if predictions[i].class_id == 0:
                 self.seams_counter += 1
-            elif predictions[i].class_name == 'Beam':
+            elif predictions[i].class_id == 1:
                 self.beam_counter += 1
-            elif predictions[i].class_name == 'Hole':
+            elif predictions[i].class_id == 2:
                 self.hole_counter += 1
-            elif predictions[i].class_name == 'Souflure':
+            elif predictions[i].class_id == 3:
                 self.souflure_counter += 1
-            elif predictions[i].class_name == 'Water':
+            elif predictions[i].class_id == 4:
                 self.water_counter += 1
 
             rect_item = QGraphicsRectItem(QRectF(QPointF(top, left), QPointF(bottom, right)))
+            tool_tip = "{} - {:.2f}".format(predictions[i].class_name, predictions[i].confidence)
+            rect_item.setToolTip(tool_tip)
             pen = QPen(colors[predictions[i].class_id])
             pen.setWidth(2)
             rect_item.setPen(pen)
+
             # rect_item.setFlag(QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemIsSelectable)
             self.scene.addItem(rect_item)
             self.rect_items.append(rect_item)
