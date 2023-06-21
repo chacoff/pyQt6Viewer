@@ -66,16 +66,26 @@ class MainWindow(QMainWindow):
         reset_brightness = QAction('Reset Brightness', self)
         reset_brightness.triggered.connect(self.reset_brightness)
         reset_brightness.setShortcut('b')
+        da_seams = QAction(QIcon('includes/da_32.png'), 'Yes', self)
+        da_seams.triggered.connect(self.da_seams)
+        net_seams = QAction(QIcon('includes/net_32.png'), 'No', self)
+        net_seams.triggered.connect(self.net_seams)
+        # Loading buttons
         toolbar.addAction(browse_action)
         toolbar.addAction(model_action)
         toolbar.addAction(process_action)
         toolbar.addSeparator()
+        # Actions buttons
         toolbar.addAction(firstIm_action)
         toolbar.addAction(previous_action)
         toolbar.addAction(center_image_action)
         toolbar.addAction(next_action)
         toolbar.addAction(lastIm_action)
         toolbar.addAction(reset_brightness)
+        toolbar.addSeparator()
+        # Statistics buttons
+        toolbar.addAction(da_seams)
+        toolbar.addAction(net_seams)
         toolbar.setStyleSheet('''
             QToolBar {
                 background-color: #f2f2f2;
@@ -86,6 +96,7 @@ class MainWindow(QMainWindow):
             }
 
             QToolBar QToolButton {
+                font-size: 14px;
                 background-color: #d3d3d3;
                 padding: 6px;
                 border: none;
@@ -162,6 +173,12 @@ class MainWindow(QMainWindow):
         w.setLayout(main_vertical_layout)
         self.setCentralWidget(w)
         self.statusBar().showMessage('Ready')
+
+    def da_seams(self):
+        self.error_box('Da Seams', 'Pierrick is coding it')
+
+    def net_seams(self):
+        self.error_box('Net Seams', 'Pierrick is coding it')
 
     def set_status_bar(self):
         message = f'{self.current_image_index + 1} of {len(self.image_files)} - ' \
@@ -312,6 +329,8 @@ class MainWindow(QMainWindow):
 
     def error_box(self, title, message):
         dlg = QMessageBox(self)
+        icon = QIcon('includes/cat.png')
+        dlg.setIconPixmap(icon.pixmap(64, 64))
         dlg.setWindowTitle(title)
         dlg.setText(message)
         dlg.exec()
