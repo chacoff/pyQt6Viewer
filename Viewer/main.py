@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
         self.classes_color = []
         self.classes_thre = []
         self.counters = [0]
-        self.alex = True  # fast mode for desperators
+        self.alex = False  # fast mode for desperators
 
         # Model name
         self.model_name = QLabel('Model: *.onnx')
