@@ -1,7 +1,8 @@
 import os
 import cv2
-from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QLabel, QPushButton, QHBoxLayout, \
-    QFileDialog, QMainWindow, QSlider, QStatusBar, QMessageBox
+from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QLabel, QPushButton, \
+    QHBoxLayout, \
+    QFileDialog, QMainWindow, QSlider, QStatusBar, QMessageBox, QGridLayout, QDialog
 from PyQt6.QtCore import Qt, QPointF, QDir, QSize, pyqtSignal, QFileInfo, QUrl
 from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices, QColor, QIcon
 import sys
@@ -10,6 +11,9 @@ from timeit import default_timer as timer
 from imageview import ImageView
 from imageinfo import ImageInfo
 from YoloV5_Onnx_detect import YoloV5OnnxSeams
+import os
+import pandas as pd
+from Viewer.Matrix import create_matrix
 
 
 class MainWindow(QMainWindow):
@@ -25,6 +29,7 @@ class MainWindow(QMainWindow):
         self.classes_thre = []
         self.counters = [0]
         self.alex = False  # fast mode for desperators
+        self.mydict = {}
 
         # Model name
         self.model_name = QLabel('Model: *.onnx')
@@ -70,6 +75,8 @@ class MainWindow(QMainWindow):
         da_seams.triggered.connect(self.da_seams)
         net_seams = QAction(QIcon('includes/net_32.png'), 'No', self)
         net_seams.triggered.connect(self.net_seams)
+        open_matrix = QAction(QIcon('includes/matrix_32.png'), 'Open Matrix', self)
+        open_matrix.triggered.connect(self.open_matrix_image)
         # Loading buttons
         toolbar.addAction(browse_action)
         toolbar.addAction(model_action)
@@ -86,6 +93,7 @@ class MainWindow(QMainWindow):
         # Statistics buttons
         toolbar.addAction(da_seams)
         toolbar.addAction(net_seams)
+        toolbar.addAction(open_matrix)
         toolbar.setStyleSheet('''
             QToolBar {
                 background-color: #f2f2f2;
@@ -175,11 +183,54 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage('Ready')
 
     def da_seams(self):
-        self.error_box('Da Seams', 'Pierrick is coding it')
+        self.write_in_csv("seams")
 
     def net_seams(self):
-        self.error_box('Net Seams', 'Pierrick is coding it')
+        self.write_in_csv("notseams")
 
+    def write_in_csv(self, ground_t):
+        if os.path.split(self.filename())[1][:] not in self.mydict:
+            self.error_box('Da Seams', 'You need to launch the process of this image before !')
+        else:
+            new_file = not os.path.exists("../ZH.csv")
+            if new_file:
+                df = pd.DataFrame(columns=['Name of file', 'Ground_truth', 'Predict'])
+            else:
+                df = pd.read_csv("../ZH.csv")
+            if os.path.split(self.filename())[1][:] in df['Name of file'].to_list():
+                df = df.drop(df[df['Name of file'] == os.path.split(self.filename())[1][:]].index)
+            data = [os.path.split(self.filename())[1][:], ground_t, self.mydict[os.path.split(self.filename())[1][:]]]
+            new_line = pd.DataFrame([data], columns=['Name of file', 'Ground_truth', 'Predict'])
+            df = pd.concat([df, new_line], ignore_index=True)
+            df.to_csv("../ZH.csv", index=False)
+
+    def open_matrix_image(self):
+        create_matrix()
+        image_path = "../ZH018_plot.png"
+
+        # Charger l'image en utilisant QImage
+        image = QImage(image_path)
+
+        # Convertir l'image en QPixmap
+        pixmap = QPixmap.fromImage(image)
+
+        # Créer une fenêtre de dialogue
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Image")
+        dialog.setModal(True)
+
+        # Créer un QLabel pour afficher l'image dans la fenêtre de dialogue
+        label = QLabel(dialog)
+        label.setPixmap(pixmap.scaled(900, 898, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+
+        # Créer un layout et un widget pour contenir le QLabel
+        layout = QGridLayout(dialog)
+        widget = QWidget(dialog)
+        layout.addWidget(label)
+        widget.setLayout(layout)
+
+        dialog.setLayout(layout)
+        dialog.show()
     def set_status_bar(self):
         message = f'{self.current_image_index + 1} of {len(self.image_files)} - ' \
                   f'{QFileInfo(self.filename()).fileName()} - ' \
@@ -274,6 +325,10 @@ class MainWindow(QMainWindow):
         for prediction in predictions:
             class_id = prediction.class_id
             self.counters[class_id] += 1
+            if class_id == 1:
+                self.mydict[os.path.split(self.filename())[1][:]] = "notseams"
+            elif class_id == 0:
+                self.mydict[os.path.split(self.filename())[1][:]] = "seams"
 
     def show_previous_image(self):
         if self.current_image_index > 0:
@@ -337,7 +392,6 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == '__main__':
-
     app = QApplication(sys.argv)
 
     image_window = MainWindow()
