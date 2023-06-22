@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
         self.classes_color = []
         self.classes_thre = []
         self.counters = [0]
-        self.alex = False  # fast mode for desperators
+        self.alex = True  # fast mode for desperators
         self.mydict = {}
 
         # Model name
@@ -37,6 +37,9 @@ class MainWindow(QMainWindow):
 
         self.inference_time = QLabel('Inference time: 0.00 ms')
         self.inference_time.setStyleSheet('''QLabel {font-size: 18px; font-weight: bold; color: #FF8040;}''')
+
+        self.final_classification = QLabel('...')
+        self.final_classification.setStyleSheet('''QLabel {font-size: 18px; font-weight: bold; color: #FF8040;}''')
 
         # Panel Py-classes
         self.panel_view = ImageView()
@@ -48,15 +51,15 @@ class MainWindow(QMainWindow):
         toolbar = self.addToolBar('Menu')
         browse_action = QAction("Browse", self)  # QIcon('')
         browse_action.triggered.connect(self.browse_folder)
-        browse_action.setShortcut('o')
+        browse_action.setShortcut('w')
         process_action = QAction("Process", self)
         process_action.triggered.connect(self.process_image)
         process_action.setShortcut('p')
         model_action = QAction("Model", self)
         model_action.triggered.connect(self.browse_model)
         model_action.setShortcut('m')
-        firstIm_action = QAction("<< First Image", self)
-        firstIm_action.triggered.connect(self.show_first_image)
+        first_im_action = QAction("<< First Image", self)
+        first_im_action.triggered.connect(self.show_first_image)
         previous_action = QAction("< Previous", self)
         previous_action.triggered.connect(self.show_previous_image)
         previous_action.setShortcut('a')
@@ -66,15 +69,17 @@ class MainWindow(QMainWindow):
         next_action = QAction("Next >", self)
         next_action.triggered.connect(self.show_next_image)
         next_action.setShortcut('d')
-        lastIm_action = QAction("Last Image >>", self)
-        lastIm_action.triggered.connect(self.show_last_image)
+        last_im_action = QAction("Last Image >>", self)
+        last_im_action.triggered.connect(self.show_last_image)
         reset_brightness = QAction('Reset Brightness', self)
         reset_brightness.triggered.connect(self.reset_brightness)
         reset_brightness.setShortcut('b')
         da_seams = QAction(QIcon('includes/da_32.png'), 'Yes', self)
         da_seams.triggered.connect(self.da_seams)
+        da_seams.setShortcut('o')
         net_seams = QAction(QIcon('includes/net_32.png'), 'No', self)
         net_seams.triggered.connect(self.net_seams)
+        net_seams.setShortcut('n')
         open_matrix = QAction(QIcon('includes/matrix_32.png'), 'Open Matrix', self)
         open_matrix.triggered.connect(self.open_matrix_image)
         # Loading buttons
@@ -83,11 +88,11 @@ class MainWindow(QMainWindow):
         toolbar.addAction(process_action)
         toolbar.addSeparator()
         # Actions buttons
-        toolbar.addAction(firstIm_action)
+        toolbar.addAction(first_im_action)
         toolbar.addAction(previous_action)
         toolbar.addAction(center_image_action)
         toolbar.addAction(next_action)
-        toolbar.addAction(lastIm_action)
+        toolbar.addAction(last_im_action)
         toolbar.addAction(reset_brightness)
         toolbar.addSeparator()
         # Statistics buttons
@@ -158,8 +163,12 @@ class MainWindow(QMainWindow):
 
         # Main vertical container to set a header with model name
         main_vertical_layout = QVBoxLayout()
+
+        # this is acting like a header
         main_vertical_layout.addWidget(self.model_name)
         main_vertical_layout.addWidget(self.inference_time)
+
+        # the 2 panels are the horizontal panel with the image viewer and the panel info
         main_vertical_layout.addLayout(layout_2panels)
         main_vertical_layout.setContentsMargins(16, 16, 16, 16)
 
@@ -192,21 +201,21 @@ class MainWindow(QMainWindow):
         if os.path.split(self.filename())[1][:] not in self.mydict:
             self.error_box('Da Seams', 'You need to launch the process of this image before !')
         else:
-            new_file = not os.path.exists("../ZH.csv")
+            new_file = not os.path.exists("matrix/current_matrix.csv")
             if new_file:
                 df = pd.DataFrame(columns=['Name of file', 'Ground_truth', 'Predict'])
             else:
-                df = pd.read_csv("../ZH.csv")
+                df = pd.read_csv("matrix/current_matrix.csv")
             if os.path.split(self.filename())[1][:] in df['Name of file'].to_list():
                 df = df.drop(df[df['Name of file'] == os.path.split(self.filename())[1][:]].index)
             data = [os.path.split(self.filename())[1][:], ground_t, self.mydict[os.path.split(self.filename())[1][:]]]
             new_line = pd.DataFrame([data], columns=['Name of file', 'Ground_truth', 'Predict'])
             df = pd.concat([df, new_line], ignore_index=True)
-            df.to_csv("../ZH.csv", index=False)
+            df.to_csv("matrix/current_matrix.csv", index=False)
 
     def open_matrix_image(self):
         create_matrix()
-        image_path = "../ZH018_plot.png"
+        image_path = "matrix/confusion_matrix.png"
 
         # Charger l'image en utilisant QImage
         image = QImage(image_path)
@@ -231,6 +240,7 @@ class MainWindow(QMainWindow):
 
         dialog.setLayout(layout)
         dialog.show()
+
     def set_status_bar(self):
         message = f'{self.current_image_index + 1} of {len(self.image_files)} - ' \
                   f'{QFileInfo(self.filename()).fileName()} - ' \
@@ -322,13 +332,19 @@ class MainWindow(QMainWindow):
         self.panel_info.update_statistics(self.classes, self.counters, self.classes_color)
 
     def statistics_counter(self, predictions):
+
         for prediction in predictions:
             class_id = prediction.class_id
             self.counters[class_id] += 1
+
             if class_id == 1:
                 self.mydict[os.path.split(self.filename())[1][:]] = "notseams"
+                self.final_classification.setText(f'NoSeams')
             elif class_id == 0:
                 self.mydict[os.path.split(self.filename())[1][:]] = "seams"
+                self.final_classification.setText(f'Seams')
+
+        # classification = [c.class_name for c in predictions if c.class_name == 'Seams']
 
     def show_previous_image(self):
         if self.current_image_index > 0:

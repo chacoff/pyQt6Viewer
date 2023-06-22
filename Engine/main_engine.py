@@ -4,7 +4,7 @@ import queue
 
 def process_item(item):
     # Perform some processing on the item
-    processed_item = item * 2
+    processed_item = item * 1
 
     # Simulate some delay in processing
     import time

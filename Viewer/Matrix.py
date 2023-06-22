@@ -5,6 +5,7 @@ import seaborn as sns
 import numpy as np
 import os
 
+
 def create_matrix():
     sns.set_style("whitegrid")
     main_source = f'..'
@@ -43,5 +44,5 @@ def create_matrix():
     ax.yaxis.set_ticklabels(labels)
 
     # plt.show()
-    lastname = os.path.join(os.getcwd(), main_source, name+'_plot.png')
+    lastname = os.path.join('matrix', 'confusion_matrix.png')
     plt.savefig(lastname, bbox_inches='tight', dpi=199)
