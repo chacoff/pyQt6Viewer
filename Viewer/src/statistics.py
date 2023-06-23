@@ -50,3 +50,49 @@ class StatisticsPlot(QWidget):
 
     def get_incidences(self, incidences):
         self.incidences = incidences
+
+
+class ClassificationPlot(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.x_axis = []
+        self.y_axis = []
+
+        self.plot_widget = pg.PlotWidget()
+        self.plot_widget.setBackground('w')
+        self.plot_widget.hideAxis('left')
+        self.plot_widget.hideAxis('right')
+        self.plot_widget.hideAxis('bottom')
+        self.plot_widget.setMouseEnabled(x=False, y=False)
+        self.plot_widget.setStyleSheet(" margin:0px; border:1px solid rgb(130, 135, 144); ")
+
+    def setup_plot(self):
+
+        x = range(len(self.x_axis))
+        bar_graph = pg.BarGraphItem(x=x,
+                                    height=self.y_axis,
+                                    width=0.8,
+                                    brush='#f8ba7c',
+                                    title='Classification')
+
+        self.plot_widget.addItem(bar_graph)
+
+        for i, classification in enumerate(self.y_axis):
+
+            counter = pg.TextItem(text=f'{classification}',
+                                  color='w',
+                                  anchor=(0.5, 0))
+            counter.setPos(i, classification)
+            self.plot_widget.addItem(counter)
+
+        x_axis_labels = [pg.TextItem(text=x_ax, anchor=(0.5, 0), color='#828790') for x_ax in self.x_axis]
+
+        for i, label in enumerate(x_axis_labels):
+            label.setPos(i, 0)
+            self.plot_widget.addItem(label)
+
+    def get_x_axis(self, x_axis):
+        self.x_axis = x_axis
+
+    def get_y_axis(self, y_axis):
+        self.y_axis = y_axis

@@ -28,8 +28,11 @@ class MainWindow(QMainWindow):
         self.classes_color = []
         self.classes_thre = []
         self.counters = [0]
+        self.counters_classification = [0] * 4
         self.alex = True  # fast mode for desperators
-        self.mydict = {}
+        self.matrix_dict = {}
+        self.matrix_csv = self.unique_file('matrix/current_matrix.csv')
+        self.matrix_img = self.unique_file('matrix/confusion_matrix.png')
 
         # Model name
         self.model_name = QLabel('Model: *.onnx')
@@ -74,12 +77,12 @@ class MainWindow(QMainWindow):
         reset_brightness = QAction('Reset Brightness', self)
         reset_brightness.triggered.connect(self.reset_brightness)
         reset_brightness.setShortcut('b')
-        da_seams = QAction(QIcon('includes/da_32.png'), 'Yes', self)
-        da_seams.triggered.connect(self.da_seams)
-        da_seams.setShortcut('o')
-        net_seams = QAction(QIcon('includes/net_32.png'), 'No', self)
-        net_seams.triggered.connect(self.net_seams)
-        net_seams.setShortcut('n')
+        model_is_ok = QAction(QIcon('includes/da_32.png'), 'Yes', self)
+        model_is_ok.triggered.connect(self.model_is_ok)
+        model_is_ok.setShortcut('o')
+        model_is_not_ok = QAction(QIcon('includes/net_32.png'), 'No', self)
+        model_is_not_ok.triggered.connect(self.model_is_not_ok)
+        model_is_not_ok.setShortcut('n')
         open_matrix = QAction(QIcon('includes/matrix_32.png'), 'Open Matrix', self)
         open_matrix.triggered.connect(self.open_matrix_image)
         # Loading buttons
@@ -96,8 +99,8 @@ class MainWindow(QMainWindow):
         toolbar.addAction(reset_brightness)
         toolbar.addSeparator()
         # Statistics buttons
-        toolbar.addAction(da_seams)
-        toolbar.addAction(net_seams)
+        toolbar.addAction(model_is_ok)
+        toolbar.addAction(model_is_not_ok)
         toolbar.addAction(open_matrix)
         toolbar.setStyleSheet('''
             QToolBar {
@@ -191,41 +194,81 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(w)
         self.statusBar().showMessage('Ready')
 
-    def da_seams(self):
-        self.write_in_csv("seams")
+    def model_is_ok(self):
+        """
+            X-axis reference to update the vector self.counters_classification
+            Seams Ground 0
+            NoSeams Ground 1
+            Seams Prediction 2
+            NoSeams Prediction 3
+        """
+        current_image_name = QFileInfo(self.filename()).fileName()
+        ground_truth = self.user_classification(current_image_name, 'Ok')
+        self.write_in_csv(ground_truth)
+        self.panel_info.update_statistics(self.classes, self.counters, self.classes_color, self.counters_classification)
 
-    def net_seams(self):
-        self.write_in_csv("notseams")
+    def model_is_not_ok(self):
+        """
+            X-axis reference to update the vector self.counters_classification
+            Seams Ground 0
+            NoSeams Ground 1
+            Seams Prediction 2
+            NoSeams Prediction 3
+        """
+        current_image_name = QFileInfo(self.filename()).fileName()
+        ground_truth = self.user_classification(current_image_name, 'NotOk')
+        self.write_in_csv(ground_truth)
+        self.panel_info.update_statistics(self.classes, self.counters, self.classes_color, self.counters_classification)
+
+    def user_classification(self, current_image_name, user):
+        """ handles most of the interactions from the user while classifying the ground truth """
+
+        if current_image_name not in self.matrix_dict:
+            self.error_box('Image not processed', 'You need to launch the process of this image before !')
+            return
+
+        ground_truth = self.ground_t_calculator(self.matrix_dict[current_image_name], user)
+
+        if ground_truth == 'Seams':
+            self.counters_classification[0] += 1
+        elif ground_truth == 'NoSeams':
+            self.counters_classification[1] += 1
+
+        return ground_truth
 
     def write_in_csv(self, ground_t):
-        if os.path.split(self.filename())[1][:] not in self.mydict:
-            self.error_box('Da Seams', 'You need to launch the process of this image before !')
+        current_image_name = QFileInfo(self.filename()).fileName()
+
+        if current_image_name not in self.matrix_dict:
+            return
+
+        new_file = not os.path.exists(self.matrix_csv)
+
+        if new_file:
+            df = pd.DataFrame(columns=['FileName', 'Ground_truth', 'Predict'])
         else:
-            new_file = not os.path.exists("matrix/current_matrix.csv")
-            if new_file:
-                df = pd.DataFrame(columns=['Name of file', 'Ground_truth', 'Predict'])
-            else:
-                df = pd.read_csv("matrix/current_matrix.csv")
-            if os.path.split(self.filename())[1][:] in df['Name of file'].to_list():
-                df = df.drop(df[df['Name of file'] == os.path.split(self.filename())[1][:]].index)
-            data = [os.path.split(self.filename())[1][:], ground_t, self.mydict[os.path.split(self.filename())[1][:]]]
-            new_line = pd.DataFrame([data], columns=['Name of file', 'Ground_truth', 'Predict'])
-            df = pd.concat([df, new_line], ignore_index=True)
-            df.to_csv("matrix/current_matrix.csv", index=False)
+            df = pd.read_csv(self.matrix_csv)
+
+        if current_image_name in df['FileName'].to_list():
+            df = df.drop(df[df['FileName'] == current_image_name].index)
+
+        data = [current_image_name, ground_t, self.matrix_dict[current_image_name]]
+        new_line = pd.DataFrame([data], columns=['FileName', 'Ground_truth', 'Predict'])
+        df = pd.concat([df, new_line], ignore_index=True)
+        df.to_csv(self.matrix_csv, index=False)
 
     def open_matrix_image(self):
-        create_matrix()
-        image_path = "matrix/confusion_matrix.png"
+        create_matrix(self.matrix_img, self.matrix_csv)
 
         # Charger l'image en utilisant QImage
-        image = QImage(image_path)
+        image = QImage(self.matrix_img)
 
         # Convertir l'image en QPixmap
         pixmap = QPixmap.fromImage(image)
 
         # Créer une fenêtre de dialogue
         dialog = QDialog(self)
-        dialog.setWindowTitle("Image")
+        dialog.setWindowTitle("Confusion Matrix")
         dialog.setModal(True)
 
         # Créer un QLabel pour afficher l'image dans la fenêtre de dialogue
@@ -310,6 +353,10 @@ class MainWindow(QMainWindow):
             self.counters = [0] * len(self.classes)  # updates counter's length according the number of classes
 
     def process_image(self):
+        """ process the image will trigger the statistic counters and will start filling
+        the dictionary self.matrix_dict storing all the images already processed
+        """
+
         if not self.folder_path:
             self.error_box('Folder Path', 'Please load a folder with images in BMP or PNG')
             return
@@ -329,22 +376,45 @@ class MainWindow(QMainWindow):
 
         self.panel_view.draw_boxes_and_labels(predictions, self.classes_color)
         self.statistics_counter(predictions)
-        self.panel_info.update_statistics(self.classes, self.counters, self.classes_color)
+        self.panel_info.update_statistics(self.classes, self.counters, self.classes_color, self.counters_classification)
 
     def statistics_counter(self, predictions):
+        """
+        statistic counters for object instances and image classification
 
-        for prediction in predictions:
-            class_id = prediction.class_id
-            self.counters[class_id] += 1
+        the graph for ground truth matrix is pre defined like this:
+            Seams Ground 0
+            NoSeams Ground 1
+            Seams Prediction 2
+            NoSeams Prediction 3
 
-            if class_id == 1:
-                self.mydict[os.path.split(self.filename())[1][:]] = "notseams"
+        X-axis reference to update the vector self.counters_classification
+        """
+
+        current_image_name = QFileInfo(self.filename()).fileName()
+
+        if current_image_name not in self.matrix_dict:   
+            for prediction in predictions:
+                class_id = prediction.class_id
+                self.counters[class_id] += 1
+    
+                # if class_id == 1:
+                #     self.mydict[os.path.split(self.filename())[1][:]] = "NoSeams"
+                # elif class_id == 0:
+                #     self.mydict[os.path.split(self.filename())[1][:]] = "Seams"
+    
+            # Final classification of the model, Seams if there is at least one seams detected
+            classification = [c.class_name for c in predictions if c.class_name == 'Seams']
+            
+            if len(classification) == 0:  # it means no seams where detected in the beam
+                # here's the first time the image is included in self.matrix_dict
+                self.matrix_dict[current_image_name] = "NoSeams"
                 self.final_classification.setText(f'NoSeams')
-            elif class_id == 0:
-                self.mydict[os.path.split(self.filename())[1][:]] = "seams"
+                self.counters_classification[3] += 1
+            else:
+                self.matrix_dict[current_image_name] = "Seams"
                 self.final_classification.setText(f'Seams')
-
-        # classification = [c.class_name for c in predictions if c.class_name == 'Seams']
+                self.counters_classification[2] += 1
 
     def show_previous_image(self):
         if self.current_image_index > 0:
@@ -405,6 +475,43 @@ class MainWindow(QMainWindow):
         dlg.setWindowTitle(title)
         dlg.setText(message)
         dlg.exec()
+
+    @staticmethod
+    def ground_t_calculator(a, b):
+        """ based on the model output classification and the user Ok and NotOk,
+        returns the ground truth. The target is to avoid confusing the user to write Seams/NoSeams
+        and instead, just accept or reject the output classification
+
+            a = prediction.class_id
+            b = ground_truth class_id
+            Model Seams, Ok> Seams <> 0 0 = 0
+            Model Seams, NotOk > NoSeams <> 0 1 = 1
+            Model NoSeams, Ok> NoSeams <> 1 0 = 1
+            Model NoSeams, NotOK> Seams <> 1 1 = 0
+        """
+
+        if a == 'Seams' and b == 'Ok':
+            return 'Seams'
+        elif a == 'Seams' and b == 'NotOk':
+            return 'NoSeams'
+        elif a == 'NoSeams' and b == 'Ok':
+            return 'NoSeams'
+        elif a == 'NoSeams' and b == 'NotOk':
+
+            return 'Seams'
+        else:
+            raise ValueError("Invalid input values")
+
+    @staticmethod
+    def unique_file(path):
+        root, ext = os.path.splitext(path)
+        k = 1
+
+        while os.path.exists(path):
+            path = root + '(' + str(k) + ')' + ext
+            k += 1
+
+        return path
 
 
 if __name__ == '__main__':
