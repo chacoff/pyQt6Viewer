@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
         self.classes_thre = []
         self.counters = [0]
         self.counters_classification = [0] * 4
-        self.alex = True  # fast mode for desperators
+        self.alex = False  # fast mode for desperators
         self.matrix_dict = {}
         self.matrix_csv = self.unique_file('matrix/current_matrix.csv')
         self.matrix_img = self.unique_file('matrix/confusion_matrix.png')
