@@ -6,14 +6,13 @@ from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLa
 from PyQt6.QtCore import Qt, QPointF, QDir, QSize, pyqtSignal, QFileInfo, QUrl
 from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices, QColor, QIcon
 import sys
-import numpy
 from timeit import default_timer as timer
 from imageview import ImageView
 from imageinfo import ImageInfo
 from YoloV5_Onnx_detect import YoloV5OnnxSeams
 import os
 import pandas as pd
-from Viewer.Matrix import create_matrix
+from Matrix import create_matrix
 
 
 class MainWindow(QMainWindow):
@@ -33,6 +32,7 @@ class MainWindow(QMainWindow):
         self.matrix_dict = {}
         self.matrix_csv = self.unique_file('matrix/current_matrix.csv')
         self.matrix_img = self.unique_file('matrix/confusion_matrix.png')
+        self.user_flag = False
 
         # Model name
         self.model_name = QLabel('Model: *.onnx')
@@ -41,8 +41,14 @@ class MainWindow(QMainWindow):
         self.inference_time = QLabel('Inference time: 0.00 ms')
         self.inference_time.setStyleSheet('''QLabel {font-size: 18px; font-weight: bold; color: #FF8040;}''')
 
-        self.final_classification = QLabel('...')
-        self.final_classification.setStyleSheet('''QLabel {font-size: 18px; font-weight: bold; color: #FF8040;}''')
+        self.image_name_title = QLabel('*.bmp')
+        self.image_name_title.setStyleSheet('''QLabel {font-size: 18px; font-weight: bold; color: #606060;}''')
+
+        self.model_prediction_label = QLabel('prediction: ')
+        self.model_prediction_label.setStyleSheet('''QLabel {font-size: 20px; font-weight: bold; color: #606060;}''')
+
+        self.ground_truth_label = QLabel('ground truth: ')
+        self.ground_truth_label.setStyleSheet('''QLabel {font-size: 20px; font-weight: bold; color: #FF8040;}''')
 
         # Panel Py-classes
         self.panel_view = ImageView()
@@ -167,9 +173,16 @@ class MainWindow(QMainWindow):
         # Main vertical container to set a header with model name
         main_vertical_layout = QVBoxLayout()
 
-        # this is acting like a header
-        main_vertical_layout.addWidget(self.model_name)
-        main_vertical_layout.addWidget(self.inference_time)
+        header = QGridLayout()
+
+        # header
+        header.addWidget(self.model_name, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        header.addWidget(self.inference_time, 1, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        header.addWidget(self.image_name_title, 0, 1, 2, 1, alignment=Qt.AlignmentFlag.AlignLeft)
+        header.addWidget(self.model_prediction_label, 0, 2, alignment=Qt.AlignmentFlag.AlignLeft)
+        header.addWidget(self.ground_truth_label, 1, 2, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        main_vertical_layout.addItem(header)
 
         # the 2 panels are the horizontal panel with the image viewer and the panel info
         main_vertical_layout.addLayout(layout_2panels)
@@ -206,6 +219,7 @@ class MainWindow(QMainWindow):
         ground_truth = self.user_classification(current_image_name, 'Ok')
         self.write_in_csv(ground_truth)
         self.panel_info.update_statistics(self.classes, self.counters, self.classes_color, self.counters_classification)
+        self.ground_truth_label.setText(f'ground truth: {ground_truth}')
 
     def model_is_not_ok(self):
         """
@@ -219,6 +233,7 @@ class MainWindow(QMainWindow):
         ground_truth = self.user_classification(current_image_name, 'NotOk')
         self.write_in_csv(ground_truth)
         self.panel_info.update_statistics(self.classes, self.counters, self.classes_color, self.counters_classification)
+        self.ground_truth_label.setText(f'ground truth: {ground_truth}')
 
     def user_classification(self, current_image_name, user):
         """ handles most of the interactions from the user while classifying the ground truth """
@@ -229,10 +244,12 @@ class MainWindow(QMainWindow):
 
         ground_truth = self.ground_t_calculator(self.matrix_dict[current_image_name], user)
 
-        if ground_truth == 'Seams':
-            self.counters_classification[0] += 1
-        elif ground_truth == 'NoSeams':
-            self.counters_classification[1] += 1
+        if not self.user_flag:
+            if ground_truth == 'Seams':
+                self.counters_classification[0] += 1
+            elif ground_truth == 'NoSeams':
+                self.counters_classification[1] += 1
+            self.user_flag = True
 
         return ground_truth
 
@@ -285,6 +302,14 @@ class MainWindow(QMainWindow):
         dialog.show()
 
     def set_status_bar(self):
+        """ set the status bar with some information about the current image
+        set title in the header about the current image and predictions
+        """
+
+        self.image_name_title.setText(QFileInfo(self.filename()).fileName())
+        self.model_prediction_label.setText('prediction: ')
+        self.ground_truth_label.setText('ground truth: ')
+
         message = f'{self.current_image_index + 1} of {len(self.image_files)} - ' \
                   f'{QFileInfo(self.filename()).fileName()} - ' \
                   f'{self.panel_view.channel}x{self.panel_view.height}x{self.panel_view.width} in ' \
@@ -393,7 +418,8 @@ class MainWindow(QMainWindow):
 
         current_image_name = QFileInfo(self.filename()).fileName()
 
-        if current_image_name not in self.matrix_dict:   
+        if current_image_name not in self.matrix_dict:
+            self.user_flag = False
             for prediction in predictions:
                 class_id = prediction.class_id
                 self.counters[class_id] += 1
@@ -409,11 +435,11 @@ class MainWindow(QMainWindow):
             if len(classification) == 0:  # it means no seams where detected in the beam
                 # here's the first time the image is included in self.matrix_dict
                 self.matrix_dict[current_image_name] = "NoSeams"
-                self.final_classification.setText(f'NoSeams')
+                self.model_prediction_label.setText(f'prediction: NoSeams')
                 self.counters_classification[3] += 1
             else:
                 self.matrix_dict[current_image_name] = "Seams"
-                self.final_classification.setText(f'Seams')
+                self.model_prediction_label.setText(f'prediction: Seams')
                 self.counters_classification[2] += 1
 
     def show_previous_image(self):

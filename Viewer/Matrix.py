@@ -29,8 +29,7 @@ def create_matrix(image_path, matrix_csv):
     ax.xaxis.set_ticklabels(labels)
     ax.yaxis.set_ticklabels(labels)
 
-    # plt.savefig(image_path, bbox_inches='tight', dpi=199)
-    plt.show()
+    plt.savefig(image_path, bbox_inches='tight', dpi=199)
     plt.clf()
 
 
