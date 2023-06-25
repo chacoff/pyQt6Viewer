@@ -74,5 +74,3 @@ if __name__ == "__main__":
 
     for attr, value in predictions.__dict__.items():
         print(attr, value)
-
-

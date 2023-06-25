@@ -599,6 +599,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
 
     image_window = MainWindow()
+    image_window.setWindowIcon(QIcon('./includes/object.ico'))
     image_window.show()
     image_window.showMaximized()
     sys.exit(app.exec())

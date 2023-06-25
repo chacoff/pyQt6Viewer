@@ -1,3 +1,5 @@
 .idea/
 /trials/
 /Viewer/src/deprecated/
+/Viewer/build/
+/Viewer/dist/
