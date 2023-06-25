@@ -3,3 +3,13 @@
 /Viewer/src/deprecated/
 /Viewer/build/
 /Viewer/dist/
+/Viewer/main.spec
+/Viewer/matrix/confusion_matrix_2.png
+/Viewer/matrix/current_matrix_2.csv
+/Viewer/matrix/seams_processor_2.db
+/Viewer/matrix/seams_processor_3.db
+/Viewer/matrix/seams_processor_4.db
+/Viewer/matrix/seams_processor_5.db
+/Viewer/matrix/seams_processor_6.db
+/Viewer/matrix/seams_processor_7.db
+/Viewer/matrix/seams_processor_8.db
