@@ -6,6 +6,8 @@ from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction,
 import sys
 import numpy
 from src.statistics import StatisticsPlot, ClassificationPlot
+import sqlite3
+import pandas as pd
 
 
 class ImageInfo(QWidget):
@@ -13,6 +15,7 @@ class ImageInfo(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.db_name = 'seams_processor.db'
         self.classes_names = []
         self.table = QTableWidget()
         self.table.setColumnCount(3)
@@ -40,8 +43,43 @@ class ImageInfo(QWidget):
 
         self.setLayout(layout)
 
-    def update_statistics(self, classes, incidences, colors, y_axis):
-        """ updates the plot with statistics of single ocurrences """
+    @staticmethod
+    def get_data_from_db(db_name) -> [list, list]:
+        """" gets all data from the database and return 2 lists to plot """
+
+        conn = sqlite3.connect(db_name)
+        cursor = conn.cursor()
+        cursor.execute("SELECT Predict, Ground_truth, Seams, Beam, Souflure, Hole, Water FROM seams_processor")
+        rows = cursor.fetchall()
+        df = pd.DataFrame(rows, columns=['Ground_truth', 'Predict', 'Seams', 'Beam', 'Souflure', 'Hole', 'Water'])
+        cursor.close()
+        conn.close()
+
+        ground_seams = df['Ground_truth'].isin(['Seams']).sum()
+        ground_noseams = df['Ground_truth'].isin(['NoSeams']).sum()
+
+        predict_seams = df['Predict'].isin(['Seams']).sum()
+        predict_noseams = df['Predict'].isin(['NoSeams']).sum()
+
+        y_axis = [predict_seams,
+                  predict_noseams,
+                  ground_seams,
+                  ground_noseams]
+
+        seams_sum = df['Seams'].sum()
+        beams_sum = df['Beam'].sum()
+        souflure_sum = df['Souflure'].sum()
+        hole_sum = df['Hole'].sum()
+        water_sum = df['Water'].sum()
+
+        incidences = [seams_sum, beams_sum, souflure_sum, hole_sum, water_sum]
+
+        return y_axis, incidences
+
+    def update_statistics(self, classes, colors, db_name):
+        """ updates the plot with statistics from the DB """
+
+        y_axis, incidences = self.get_data_from_db(db_name)
 
         self.stats.get_classes(classes)
         self.stats.get_incidences(incidences)

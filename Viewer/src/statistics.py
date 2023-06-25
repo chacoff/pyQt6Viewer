@@ -18,10 +18,12 @@ class StatisticsPlot(QWidget):
         self.plot_widget.setStyleSheet(" margin:0px; border:1px solid rgb(130, 135, 144); ")
 
     def setup_plot(self, colors):
-        """ set up and update defect counter """
+        """ set up and update defect instance counter """
 
         if colors is None:
             return
+
+        self.plot_widget.clear()
 
         x = range(len(self.classes))
         bar_graph = pg.BarGraphItem(x=x,
@@ -67,12 +69,15 @@ class ClassificationPlot(QWidget):
         self.plot_widget.setStyleSheet(" margin:0px; border:1px solid rgb(130, 135, 144); ")
 
     def setup_plot(self):
+        """" plot the predictions and user ground truth """
+
+        self.plot_widget.clear()
 
         x = range(len(self.x_axis))
         bar_graph = pg.BarGraphItem(x=x,
                                     height=self.y_axis,
                                     width=0.8,
-                                    brush='#f8ba7c',
+                                    brushes=['#F8BA7C', '#F8BA7C', '#FF8811', '#FF8811'],
                                     title='Classification')
 
         self.plot_widget.addItem(bar_graph)

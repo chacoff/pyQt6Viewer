@@ -13,12 +13,14 @@ from YoloV5_Onnx_detect import YoloV5OnnxSeams
 import os
 import pandas as pd
 from Matrix import create_matrix
+import sqlite3
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.image_files = []
+        self.current_image_name = '0000.bmp'
         self.current_image_index = 0
         self.folder_path = None
         self.model_path = None
@@ -26,13 +28,25 @@ class MainWindow(QMainWindow):
         self.classes = []
         self.classes_color = []
         self.classes_thre = []
-        self.counters = [0]
-        self.counters_classification = [0] * 4
+        self.counters = [0]  # counter for the instances of defect detection
         self.alex = False  # fast mode for desperators
         self.matrix_dict = {}
-        self.matrix_csv = self.unique_file('matrix/current_matrix.csv')
-        self.matrix_img = self.unique_file('matrix/confusion_matrix.png')
-        self.user_flag = False
+        self.matrix_csv = self.unique_file('matrix/current_matrix_1.csv')
+        self.matrix_img = self.unique_file('matrix/confusion_matrix_1.png')
+
+        # DB-sqlite
+        self.db_name = self.unique_db()
+        self.conn = sqlite3.connect(self.db_name)
+        self.cursor = self.conn.cursor()
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS seams_processor
+                          (FileName TEXT PRIMARY KEY,
+                          Ground_truth TEXT,
+                          Predict TEXT,
+                          Seams INTEGER, 
+                          Beam INTEGER, 
+                          Souflure INTEGER, 
+                          Hole INTEGER,
+                          Water INTEGER)''')
 
         # Model name
         self.model_name = QLabel('Model: *.onnx')
@@ -215,10 +229,10 @@ class MainWindow(QMainWindow):
             Seams Prediction 2
             NoSeams Prediction 3
         """
-        current_image_name = QFileInfo(self.filename()).fileName()
-        ground_truth = self.user_classification(current_image_name, 'Ok')
+        ground_truth = self.user_classification('Ok')
+        self.update_db('Ground_truth', ground_truth)
         self.write_in_csv(ground_truth)
-        self.panel_info.update_statistics(self.classes, self.counters, self.classes_color, self.counters_classification)
+        self.panel_info.update_statistics(self.classes, self.classes_color, self.db_name)
         self.ground_truth_label.setText(f'ground truth: {ground_truth}')
 
     def model_is_not_ok(self):
@@ -229,34 +243,26 @@ class MainWindow(QMainWindow):
             Seams Prediction 2
             NoSeams Prediction 3
         """
-        current_image_name = QFileInfo(self.filename()).fileName()
-        ground_truth = self.user_classification(current_image_name, 'NotOk')
+        ground_truth = self.user_classification('NotOk')
+        self.update_db('Ground_truth', ground_truth)
         self.write_in_csv(ground_truth)
-        self.panel_info.update_statistics(self.classes, self.counters, self.classes_color, self.counters_classification)
+        self.panel_info.update_statistics(self.classes, self.classes_color, self.db_name)
         self.ground_truth_label.setText(f'ground truth: {ground_truth}')
 
-    def user_classification(self, current_image_name, user):
+    def user_classification(self, user):
         """ handles most of the interactions from the user while classifying the ground truth """
 
-        if current_image_name not in self.matrix_dict:
+        if self.current_image_name not in self.matrix_dict:
             self.error_box('Image not processed', 'You need to launch the process of this image before !')
             return
 
-        ground_truth = self.ground_t_calculator(self.matrix_dict[current_image_name], user)
-
-        if not self.user_flag:
-            if ground_truth == 'Seams':
-                self.counters_classification[0] += 1
-            elif ground_truth == 'NoSeams':
-                self.counters_classification[1] += 1
-            self.user_flag = True
+        ground_truth = self.ground_t_calculator(self.matrix_dict[self.current_image_name], user)
 
         return ground_truth
 
     def write_in_csv(self, ground_t):
-        current_image_name = QFileInfo(self.filename()).fileName()
 
-        if current_image_name not in self.matrix_dict:
+        if self.current_image_name not in self.matrix_dict:
             return
 
         new_file = not os.path.exists(self.matrix_csv)
@@ -266,10 +272,10 @@ class MainWindow(QMainWindow):
         else:
             df = pd.read_csv(self.matrix_csv)
 
-        if current_image_name in df['FileName'].to_list():
-            df = df.drop(df[df['FileName'] == current_image_name].index)
+        if self.current_image_name in df['FileName'].to_list():
+            df = df.drop(df[df['FileName'] == self.current_image_name].index)
 
-        data = [current_image_name, ground_t, self.matrix_dict[current_image_name]]
+        data = [self.current_image_name, ground_t, self.matrix_dict[self.current_image_name]]
         new_line = pd.DataFrame([data], columns=['FileName', 'Ground_truth', 'Predict'])
         df = pd.concat([df, new_line], ignore_index=True)
         df.to_csv(self.matrix_csv, index=False)
@@ -303,21 +309,23 @@ class MainWindow(QMainWindow):
 
     def set_status_bar(self):
         """ set the status bar with some information about the current image
-        set title in the header about the current image and predictions
+        sets title in the header about the current image and predictions
+        sets the global current_image_name
         """
 
-        self.image_name_title.setText(QFileInfo(self.filename()).fileName())
+        self.current_image_name = QFileInfo(self.filename()).fileName()
+        self.image_name_title.setText(self.current_image_name)
         self.model_prediction_label.setText('prediction: ')
         self.ground_truth_label.setText('ground truth: ')
 
         message = f'{self.current_image_index + 1} of {len(self.image_files)} - ' \
-                  f'{QFileInfo(self.filename()).fileName()} - ' \
+                  f'{self.current_image_name} - ' \
                   f'{self.panel_view.channel}x{self.panel_view.height}x{self.panel_view.width} in ' \
                   f'{self.folder_path}'
         self.statusBar().showMessage(message)
 
     def browse_folder(self):
-        default = 'C:\\Users\\gomezja\\PycharmProjects\\201_SeamsModel\\dataset\\dev'
+        default = 'D:/Projects/00_Datasets/dev'
 
         if self.alex:
             self.folder_path = default
@@ -327,11 +335,11 @@ class MainWindow(QMainWindow):
         if not self.folder_path:
             return
 
-        dir = QDir(self.folder_path)
-        dir.setNameFilters(['*.bmp', '*.png'])
-        dir.setSorting(QDir.SortFlag.Name)
+        q_dir = QDir(self.folder_path)
+        q_dir.setNameFilters(['*.bmp', '*.png'])
+        q_dir.setSorting(QDir.SortFlag.Name)
 
-        self.image_files = [dir.absoluteFilePath(file_name) for file_name in dir.entryList()]
+        self.image_files = [q_dir.absoluteFilePath(file_name) for file_name in q_dir.entryList()]
 
         if self.image_files:
             self.panel_view.display_image(self.filename())
@@ -341,7 +349,7 @@ class MainWindow(QMainWindow):
         default = '.\\src'
 
         if self.alex:
-            model_path = os.path.join('c:\\','Users','gomezja', 'PycharmProjects', '202_SeamsProcessing','Viewer', 'src', 'best_exp2_Small_v2_768_5c.onnx')
+            model_path = os.path.join(default, 'best_exp2_Small_v2_768_5c.onnx')
             self.model_path = model_path
             model_name = model_path.split('\\')[-1]
         else:
@@ -375,8 +383,6 @@ class MainWindow(QMainWindow):
                 self.classes_color.append(color)
                 self.classes_thre.append(thre)
 
-            self.counters = [0] * len(self.classes)  # updates counter's length according the number of classes
-
     def process_image(self):
         """ process the image will trigger the statistic counters and will start filling
         the dictionary self.matrix_dict storing all the images already processed
@@ -390,6 +396,8 @@ class MainWindow(QMainWindow):
             self.error_box('Model Path', 'Please load an ONNX model before to process')
             return
 
+        self.insert_into_db()  # insert into DB the existing image
+
         frame = self.panel_view.image_cvmat  # gets the current image on the scene
 
         # Actual new processing
@@ -401,7 +409,51 @@ class MainWindow(QMainWindow):
 
         self.panel_view.draw_boxes_and_labels(predictions, self.classes_color)
         self.statistics_counter(predictions)
-        self.panel_info.update_statistics(self.classes, self.counters, self.classes_color, self.counters_classification)
+        self.panel_info.update_statistics(self.classes, self.classes_color, self.db_name)
+
+    def insert_into_db(self):
+        """ insert into the db every image process, the rest of the fields are later on updated """
+
+        self.cursor.execute("SELECT COUNT(*) FROM seams_processor WHERE FileName = ?", (self.current_image_name,))
+        result = self.cursor.fetchone()[0]
+
+        if result != 0:
+            return
+
+        sql = '''
+            INSERT OR REPLACE INTO seams_processor (
+                    FileName, 
+                    Ground_truth, 
+                    Predict, 
+                    Seams, 
+                    Beam, 
+                    Souflure, 
+                    Hole,Water
+            ) VALUES (
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?
+            )'''
+
+        self.cursor.execute(sql, (self.current_image_name,
+                                  'None',
+                                  'None',
+                                  0, 0, 0, 0, 0))
+        self.conn.commit()
+
+    def update_db(self, field, value):
+        """ update rows according the field of interest and the current_image_name """
+
+        sq0 = f'UPDATE seams_processor SET {field} = ? WHERE FileName = ?'
+        sql = sq0
+
+        self.cursor.execute(sql, (value, self.current_image_name))
+        self.conn.commit()
 
     def statistics_counter(self, predictions):
         """
@@ -416,31 +468,24 @@ class MainWindow(QMainWindow):
         X-axis reference to update the vector self.counters_classification
         """
 
-        current_image_name = QFileInfo(self.filename()).fileName()
-
-        if current_image_name not in self.matrix_dict:
-            self.user_flag = False
-            for prediction in predictions:
-                class_id = prediction.class_id
-                self.counters[class_id] += 1
+        self.counters = [0] * len(self.classes)  # updates counter's length according the number of classes
+        for prediction in predictions:
+            class_id = prediction.class_id
+            self.counters[class_id] += 1
+            self.update_db(prediction.class_name, self.counters[class_id])
     
-                # if class_id == 1:
-                #     self.mydict[os.path.split(self.filename())[1][:]] = "NoSeams"
-                # elif class_id == 0:
-                #     self.mydict[os.path.split(self.filename())[1][:]] = "Seams"
-    
-            # Final classification of the model, Seams if there is at least one seams detected
-            classification = [c.class_name for c in predictions if c.class_name == 'Seams']
+        # Final classification of the model, Seams if there is at least one seams detected
+        classification = [c.class_name for c in predictions if c.class_name == 'Seams']
             
-            if len(classification) == 0:  # it means no seams where detected in the beam
-                # here's the first time the image is included in self.matrix_dict
-                self.matrix_dict[current_image_name] = "NoSeams"
-                self.model_prediction_label.setText(f'prediction: NoSeams')
-                self.counters_classification[3] += 1
-            else:
-                self.matrix_dict[current_image_name] = "Seams"
-                self.model_prediction_label.setText(f'prediction: Seams')
-                self.counters_classification[2] += 1
+        if len(classification) == 0:  # it means no seams where detected in the beam
+            # here's the first time the image is included in self.matrix_dict
+            self.matrix_dict[self.current_image_name] = "NoSeams"
+            self.model_prediction_label.setText(f'prediction: NoSeams')
+            self.update_db('Predict', 'NoSeams')
+        else:
+            self.matrix_dict[self.current_image_name] = "Seams"
+            self.model_prediction_label.setText(f'prediction: Seams')
+            self.update_db('Predict', 'Seams')
 
     def show_previous_image(self):
         if self.current_image_index > 0:
@@ -531,13 +576,23 @@ class MainWindow(QMainWindow):
     @staticmethod
     def unique_file(path):
         root, ext = os.path.splitext(path)
+        root = root.rsplit("_", 1)[0]
         k = 1
 
         while os.path.exists(path):
-            path = root + '(' + str(k) + ')' + ext
+            path = f'{root}_{str(k)}{ext}'
             k += 1
 
         return path
+
+    @staticmethod
+    def unique_db() -> str:
+        folder = './matrix'  # Current directory
+        extension = '.db'
+        existing_databases = [file for file in os.listdir(folder) if file.endswith(extension)]
+        next_number = len(existing_databases) + 1
+
+        return f'{folder}/seams_processor_{next_number}{extension}'
 
 
 if __name__ == '__main__':
