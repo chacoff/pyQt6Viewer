@@ -14,6 +14,7 @@ import os
 import pandas as pd
 from Matrix import create_matrix
 import sqlite3
+import onnxruntime
 
 
 class MainWindow(QMainWindow):
@@ -23,6 +24,7 @@ class MainWindow(QMainWindow):
         self.current_image_name = '0000.bmp'
         self.current_image_index = 0
         self.folder_path = None
+        self._model = None
         self.model_path = None
         self.net = None
         self.classes = []
@@ -345,7 +347,7 @@ class MainWindow(QMainWindow):
             self.panel_view.display_image(self.filename())
             self.set_status_bar()
 
-    def browse_model(self):
+    def browse_model(self) -> None:
         default = '.\\src'
 
         if self.alex:
@@ -362,6 +364,19 @@ class MainWindow(QMainWindow):
 
         self.update_model_name(f'Model: {model_name}')
         self.read_classes_file()
+        # load model in memory immediately
+        self._load_model(self.model_path, 'cpu')
+
+    def _load_model(self, weight: str, device: str) -> None:
+        """Internally loads ONNX, it is available device cpu or gpu """
+
+        if device == 'cpu':
+            self._model = onnxruntime.InferenceSession(weight, providers=["CPUExecutionProvider"])
+            return
+
+        if device == 'gpu':
+            self._model = onnxruntime.InferenceSession(weight, providers=['CUDAExecutionProvider'])
+            return
 
     def read_classes_file(self):
         """ classes.names contains also color and threshold """
@@ -400,9 +415,9 @@ class MainWindow(QMainWindow):
 
         frame = self.panel_view.image_cvmat  # gets the current image on the scene
 
-        # Actual new processing
+        # Actual processing >> sending self._model loaded in the memory instead of the string self.model_path
         t0 = timer()
-        self.inference.process_image(self.classes, self.model_path, frame)
+        self.inference.process_image(self.classes, self._model, frame)
         predictions = self.inference.return_predictions()
         t1 = timer()
         self.update_inference_time(t1-t0)

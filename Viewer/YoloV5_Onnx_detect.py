@@ -34,7 +34,8 @@ class YoloV5OnnxSeams:
         model = Yolov5Onnx(classes=classes,
                            backend="onnx",
                            weight=weight,
-                           device=self.device)
+                           device=self.device,
+                           auto_install=False)
 
         self.preds = model(input_image)
 
@@ -46,31 +47,3 @@ class YoloV5OnnxSeams:
     def return_predictions(self):
         return self.preds
 
-
-if __name__ == "__main__":
-    """ local usage """
-
-    device = 'cpu'  # cpu or gpu
-    weight = './src/best_exp_Nano_v2_768_5c.onnx'
-    input_image = 'C:/Users/gomezja/PycharmProjects/201_SeamsModel/dataset/dev/ZH026_2060_009560_TX000021.png'
-    output_image = 'test1.png'
-    classes = ['Seams', 'Beam', 'Souflure', 'Hole', 'Water']
-
-    input_image = cv2.imread(input_image)
-
-    inference = YoloV5OnnxSeams()
-    inference.process_image(classes, weight, input_image)
-    predictions = inference.return_predictions()
-    print(predictions)
-
-    # activate drawing to pass properly the image
-    # cv2.imwrite(output_image, inference.output_image)
-
-    for i in range(len(predictions)):
-        print(predictions[i].class_id)
-        print(predictions[i].class_name)
-        print(predictions[i].bbox)
-        print(predictions[i].confidence)
-
-    for attr, value in predictions.__dict__.items():
-        print(attr, value)

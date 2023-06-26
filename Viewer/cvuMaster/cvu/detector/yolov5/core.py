@@ -32,11 +32,11 @@ class Yolov5(ICore):
     _BACKEND_PKG = "backends"  # "cvu.detector.yolov5.backends"
 
     def __init__(self,
-                 classes: Union[str, List[str]],
-                 backend: str = "torch",
-                 weight: str = "yolov5s",
-                 device: str = "auto",
-                 auto_install: bool = False,
+                 classes,  # : Union[str, List[str]],
+                 backend,  # : str = "torch",
+                 weight,  # : str = "yolov5s",
+                 device,  # : str = "auto",
+                 auto_install,  # : bool = False,
                  **kwargs: Any) -> None:
         """Initiate Yolov5 Object Detector
 
@@ -73,7 +73,7 @@ class Yolov5(ICore):
             self._preprocess = [letterbox, bgr_to_rgb]
         self._postprocess = []
         self._classes = {}
-        self._model = None
+        self._model = weight
 
         # setup backend and load model
         if auto_install:
@@ -81,13 +81,13 @@ class Yolov5(ICore):
         self._load_classes(classes)
         self._load_model(backend, weight, device, **kwargs)
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         """Returns Backend and Model Information
 
         Returns:
             str: information string
         """
-        return str(self._model)
+        return self._model
 
     def __call__(self, inputs: np.ndarray, **kwargs) -> Predictions:
         """Performs Yolov5 Object Detection on given inputs.
@@ -158,12 +158,12 @@ class Yolov5(ICore):
                                       original_shape).round()
         return outputs
 
-    def _load_model(self, backend_name: str, weight: str, device: str, **kwargs: Any) -> None:
+    def _load_model(self, backend_name: str, weight, device: str, **kwargs: Any) -> None:
         """Internally loads Model (backend)
 
         Args:
             backend_name (str): name of the backend
-            weight (str): path to weight file or default identifiers
+            weight (str): path to weight file or default identifiers @jaime: now is in memory from the beginning
             device (str): name of target device (auto, cpu, gpu, tpu)
         """
         # load model
@@ -172,7 +172,7 @@ class Yolov5(ICore):
         from .backends.yolov5_onnx import Yolov5
 
         if backend_name != 'tensorrt':
-            self._model = Yolov5(weight, device)  # backend
+            self._model = Yolov5(weight, device)  # backend @jaime: now is just the memory reference
         else:
             self._model = Yolov5(weight, num_classes=len(self._classes), **kwargs)
 

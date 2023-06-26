@@ -12,8 +12,8 @@ from ...postprocess.nms import nms_np
 
 
 def non_max_suppression_np(predictions: np.ndarray,
-                           conf_thres: float = 0.20,
-                           iou_thres: float = 0.20,
+                           conf_thres: float = 0.15,
+                           iou_thres: float = 0.15,
                            agnostic: bool = False,
                            multi_label: bool = False,
                            nms: Callable = nms_np) -> List[np.ndarray]:
