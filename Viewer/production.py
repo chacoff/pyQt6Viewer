@@ -39,9 +39,9 @@ class TCP:
 
     def start(self):
         self._thread.start()
-        print('thread socket is pas mal')
 
     def open(self) -> any:
+        """ open the socket and receive data """
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.bind((self._host, self._port))
         self._socket.listen(1)
@@ -58,9 +58,9 @@ class TCP:
                         break
 
                     self._buffer.queue(self.data)
-                    # self.on_data()
+
             except ConnectionResetError:
-                print('Connection error.')
+                print('Connection error')
 
             client_socket.close()
 
@@ -68,10 +68,6 @@ class TCP:
         if self._socket is not None:
             self._socket.close()
             print('Server stopped')
-
-    def on_data(self):
-        # print('Received data from client: {}'.format(self.data.decode()))
-        print(f'Total buffer in queue: {len(self._buffer)} - last data: {self.data}')
 
 
 class Process:
@@ -81,17 +77,16 @@ class Process:
 
     def start(self):
         self._thread.start()
-        print('thread process c est pete')
 
     def run(self):
-        while True:  # @ TODO: alexandre said do not fuck the thread, but instead, stop it properly otherwise will delete everything
-
+        # TODO: alexandre said do not fuck the thread, but instead, stop it properly otherwise will delete everything
+        while True:
             try:
                 item = self._buffer.dequeue()
                 print(f'item to process: {item.decode()}')
 
+                # processing ....
                 item = int(item.decode())
-
                 if isinstance(item, int):
                     print(f'item after process: {item*5}')
                 else:
@@ -113,6 +108,5 @@ def main():
 if __name__ == '__main__':
 
     main()
-    print('finished, alexandre is pete too')
     sys.exit(0)
 
