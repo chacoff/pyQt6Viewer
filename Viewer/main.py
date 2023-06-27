@@ -602,6 +602,9 @@ class MainWindow(QMainWindow):
 
     @staticmethod
     def unique_db() -> str:
+        """ one database per session """
+        # TODO @pierrick, ideally will be to have 1 database only, no csv file, only one database and remember each
+        # TODO session to generate confusion matrix per session and of tha accumulate
         folder = './matrix'  # Current directory
         extension = '.db'
         existing_databases = [file for file in os.listdir(folder) if file.endswith(extension)]
