@@ -45,22 +45,30 @@ class TCP:
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.bind((self._host, self._port))
         self._socket.listen(1)
+
         print("Server listening on {}:{}".format(self._host, self._port))
 
         while True:
             client_socket, client_address = self._socket.accept()
+            self.data = client_socket.recv(4096)
 
-            try:
-                while True:
-                    self.data = client_socket.recv(1024)
+            if not self.data:
+                print('data is empty')
+            else:
+                self._buffer.queue(self.data)
 
-                    if not self.data:
-                        break
-
-                    self._buffer.queue(self.data)
-
-            except ConnectionResetError:
-                print('Connection error')
+            # try:
+            #     while True:
+            #         self.data = client_socket.recv(1024)
+            #
+            #         if not self.data:
+            #             print('no data')
+            #             break
+            #
+            #         self._buffer.queue(self.data)
+            #
+            # except ConnectionResetError:
+            #     print('Connection error')
 
             client_socket.close()
 
@@ -86,11 +94,8 @@ class Process:
                 print(f'item to process: {item.decode()}')
 
                 # processing ....
-                item = int(item.decode())
-                if isinstance(item, int):
-                    print(f'item after process: {item*5}')
-                else:
-                    print('not an integer')
+                item = item.decode()
+                print(f'item after process: {item}')
 
             except IndexError:
                 pass
