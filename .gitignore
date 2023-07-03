@@ -13,3 +13,5 @@
 /Viewer/matrix/seams_processor_6.db
 /Viewer/matrix/seams_processor_7.db
 /Viewer/matrix/seams_processor_8.db
+*.pyc
+Viewer/matrix/
