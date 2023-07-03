@@ -29,7 +29,8 @@ def compare_same_name_files(folder1: str, folder2: str) -> None:
         print("The following files have the same name in both folders:")
         i = 0
         for file in common_files:
-            print(file)
+            os.remove(os.path.join(folder2, file))
+            print(f'removed: {file}')
             i += 1
         print(f'total equal files: {i}')
     else:
