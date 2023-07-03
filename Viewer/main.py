@@ -192,6 +192,7 @@ class MainWindow(QMainWindow):
         header = QGridLayout()
 
         # header
+        # TODO: add the number of the image on top of the image number
         header.addWidget(self.model_name, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
         header.addWidget(self.inference_time, 1, 0, alignment=Qt.AlignmentFlag.AlignLeft)
         header.addWidget(self.image_name_title, 0, 1, 2, 1, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -215,6 +216,7 @@ class MainWindow(QMainWindow):
         w_slider = QWidget()
         w_slider.setLayout(image_view_layout)
 
+        # TODO: a second slider to move faster between images
         layout_2panels.addWidget(w_slider, 5)
         layout_2panels.addWidget(self.panel_info, 1)
 
