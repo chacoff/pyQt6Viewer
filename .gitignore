@@ -15,3 +15,4 @@
 /Viewer/matrix/seams_processor_8.db
 *.pyc
 Viewer/matrix/
+Training/runs/train/

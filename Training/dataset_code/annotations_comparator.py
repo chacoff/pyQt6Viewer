@@ -49,8 +49,8 @@ def main(move: bool = False, compare: bool = True, params: dict = None) -> None:
 if __name__ == '__main__':
 
     parameters = {
-        'annotations': 'C:/Users/gomezja/PycharmProjects/00_dataset/Seams',
-        'images_set': 'C:/Users/gomezja/PycharmProjects/00_dataset/Seams_no_annotations'
+        'annotations': 'F:\\00_Seams\\dataset\\Hole',
+        'images_set': 'F:\\00_Seams\\dataset\\Hole_no_annotations'
     }
 
     main(move=False, compare=True, params=parameters)

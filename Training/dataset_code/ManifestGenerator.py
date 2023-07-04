@@ -115,7 +115,7 @@ def mover(param):
 
 if __name__ == "__main__":
     parameters = {
-        'base': 'D:\\Projects\\00_Datasets',
+        'base': 'F:\\00_Seams\\dataset',
         'folder_class': ['Seams', 'Hole'],
         'destination': 'Reference',
         'manifest': 'manifest.txt',
