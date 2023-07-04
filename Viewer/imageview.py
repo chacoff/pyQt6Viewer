@@ -238,6 +238,17 @@ class ImageView(QGraphicsView):
         QGraphicsView.mouseReleaseEvent(self, event)
 
     def wheelEvent(self, event):
+        # zoom_in_factor = 1.15
+        # zoom_out_factor = 1 / zoom_in_factor
+        #
+        # if event.angleDelta().y() > 0:
+        #     self.zoom_factor *= zoom_in_factor
+        # else:
+        #     self.zoom_factor *= zoom_out_factor
+        # self.scene_pos = event.position() # @TODO zoom in and out according mouse pointer
+        # print(self.zoom_factor)
+        # self.setZoomFactor(self.zoom_factor)
+
         if self.zoom_factor is not None:
             if self.zoom_factor == 1:
                 return
