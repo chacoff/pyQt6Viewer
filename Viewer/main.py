@@ -12,7 +12,7 @@ from imageinfo import ImageInfo
 from YoloV5_Onnx_detect import YoloV5OnnxSeams
 import os
 import pandas as pd
-from Matrix import *
+from Matrix import create_matrix
 import sqlite3
 import onnxruntime
 
@@ -33,7 +33,9 @@ class MainWindow(QMainWindow):
         self.counters = [0]  # counter for the instances of defect detection
         self.alex = False  # fast mode for desperators
         self.matrix_dict = {}
-        self.matrix = MatrixCreationClass(self.unique_file('matrix/current_matrix_1.csv'), self.unique_file('matrix/confusion_matrix_1.png'))
+        self.matrix_csv = self.unique_file('matrix/current_matrix_1.csv')
+        self.matrix_img = self.unique_file('matrix/confusion_matrix_1.png')
+
         # DB-sqlite
         self.db_name = self.unique_db()
         self.conn = sqlite3.connect(self.db_name)
@@ -267,12 +269,12 @@ class MainWindow(QMainWindow):
         if self.current_image_name not in self.matrix_dict:
             return
 
-        new_file = not os.path.exists(self.matrix.matrix_csv)
+        new_file = not os.path.exists(self.matrix_csv)
 
         if new_file:
             df = pd.DataFrame(columns=['FileName', 'Ground_truth', 'Predict'])
         else:
-            df = pd.read_csv(self.matrix.matrix_csv)
+            df = pd.read_csv(self.matrix_csv)
 
         if self.current_image_name in df['FileName'].to_list():
             df = df.drop(df[df['FileName'] == self.current_image_name].index)
@@ -280,13 +282,13 @@ class MainWindow(QMainWindow):
         data = [self.current_image_name, ground_t, self.matrix_dict[self.current_image_name]]
         new_line = pd.DataFrame([data], columns=['FileName', 'Ground_truth', 'Predict'])
         df = pd.concat([df, new_line], ignore_index=True)
-        df.to_csv(self.matrix.matrix_csv, index=False)
+        df.to_csv(self.matrix_csv, index=False)
 
     def open_matrix_image(self):
-        self.matrix.create_matrix()
+        create_matrix(self.matrix_img, self.matrix_csv)
 
         # Charger l'image en utilisant QImage
-        image = QImage(self.matrix.image_path)
+        image = QImage(self.matrix_img)
 
         # Convertir l'image en QPixmap
         pixmap = QPixmap.fromImage(image)
