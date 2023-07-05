@@ -39,9 +39,7 @@ class MainWindow(QMainWindow):
 
         # Config
         self.default_folder = ConfigLoader().get_folder()
-        print(self.default_folder)
         self.default_model = ConfigLoader().get_model()
-        print(self.default_model)
 
         # DB-sqlite
         self.db_name = self.unique_db()
