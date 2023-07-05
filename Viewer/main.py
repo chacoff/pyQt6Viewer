@@ -15,6 +15,7 @@ import pandas as pd
 from Matrix import create_matrix
 import sqlite3
 import onnxruntime
+from src.config_file import ConfigLoader
 
 
 class MainWindow(QMainWindow):
@@ -35,6 +36,12 @@ class MainWindow(QMainWindow):
         self.matrix_dict = {}
         self.matrix_csv = self.unique_file('matrix/current_matrix_1.csv')
         self.matrix_img = self.unique_file('matrix/confusion_matrix_1.png')
+
+        # Config
+        self.default_folder = ConfigLoader().get_folder()
+        print(self.default_folder)
+        self.default_model = ConfigLoader().get_model()
+        print(self.default_model)
 
         # DB-sqlite
         self.db_name = self.unique_db()
@@ -329,7 +336,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(message)
 
     def browse_folder(self):
-        default = 'D:/Projects/00_Datasets/dev'
+        default = self.default_folder
 
         if self.alex:
             self.folder_path = default
@@ -350,7 +357,7 @@ class MainWindow(QMainWindow):
             self.set_status_bar()
 
     def browse_model(self) -> None:
-        default = '.\\src'
+        default = self.default_model
 
         if self.alex:
             model_path = os.path.join(default, 'best_exp2_Small_v2_768_5c.onnx')
