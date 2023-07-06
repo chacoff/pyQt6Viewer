@@ -5,6 +5,9 @@ import sys
 import pickle
 import cv2
 import numpy as np
+from YoloV5_Onnx_detect import YoloV5OnnxSeams
+import onnxruntime
+from timeit import default_timer as timer
 
 
 class Buffer:
@@ -54,7 +57,7 @@ class TCP:
 
         print("Server listening on {}:{}".format(self._host, self._port))
 
-        i=1
+        i = 1
         while True:
             client_socket, client_address = self._socket.accept()
             self.data = client_socket.recv(self.buffer_size)
@@ -92,6 +95,10 @@ class Process:
         self._buffer = buff
         self._thread = Thread(target=self.run)
         self.header_size = 38
+        self._model = None
+        self._load_model('src/best_exp2_Small_v2_768_5c.onnx', 'cpu')
+        self.inference = YoloV5OnnxSeams()
+        self.classes = ['Seams', 'Beam', 'Souflure', 'Hole', 'Water']
 
     def start(self):
         self._thread.start()
@@ -122,11 +129,17 @@ class Process:
                     nparr = np.frombuffer(image_received, np.uint8)
                     img_np = nparr.reshape((height, width, depth)).astype('uint8')  # 2-d numpy array\n",
 
-                    image_resized = self.resize_im(img_np, scale_percent=0.25)
-                    cv2.putText(image_resized, name, (12, 60), cv2.FONT_HERSHEY_COMPLEX, 1, (5, 7, 255), 2)
+                    t0 = timer()
+                    self.inference.process_image(self.classes, self._model, img_np)
+                    predictions = self.inference.return_predictions()
+                    t1 = timer()
+                    print(f'Inference time: %.2f ms' % ((t1-t0) * 1000.0))
+                    print(predictions)
 
-                    cv2.imshow('window', image_resized)
-                    cv2.waitKey(0)
+                    # image_resized = self.resize_im(img_np, scale_percent=0.25)
+                    # cv2.putText(image_resized, name, (12, 60), cv2.FONT_HERSHEY_COMPLEX, 1, (5, 7, 255), 2)
+                    # cv2.imshow('window', image_resized)
+                    # cv2.waitKey(0)
 
                 else:
                     print(f'problems with length = {len(full_msg)} - {self.header_size} == {body_size}:')
@@ -143,6 +156,17 @@ class Process:
         image_resized = cv2.resize(image, dim)
 
         return image_resized
+
+    def _load_model(self, weight: str, device: str) -> None:
+        """Internally loads ONNX, it is available device cpu or gpu """
+
+        if device == 'cpu':
+            self._model = onnxruntime.InferenceSession(weight, providers=["CPUExecutionProvider"])
+            return
+
+        if device == 'gpu':
+            self._model = onnxruntime.InferenceSession(weight, providers=['CUDAExecutionProvider'])
+            return
 
 
 def main():
