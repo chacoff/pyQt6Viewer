@@ -43,7 +43,7 @@ class TCP:
         self._socket: any = None
         self.data: any = None
         self._thread = Thread(target=self.open)
-        self.buffer_size = 36864200
+        self.buffer_size = 36864200  # an estimation from 4096*3000*3+28
         self.header_size = 38
 
     def start(self):
