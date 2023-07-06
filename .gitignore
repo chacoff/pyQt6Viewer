@@ -1,6 +1,6 @@
 .idea/
 /trials/
-/Viewer/src/deprecated/
+/trials/deprecated/
 /Viewer/build/
 /Viewer/dist/
 /Viewer/main.spec
@@ -16,3 +16,4 @@
 *.pyc
 Viewer/matrix/
 Training/runs/train/
+/trials/deprecated/

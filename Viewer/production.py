@@ -2,6 +2,9 @@ from collections import deque
 from threading import Lock, Thread
 import socket
 import sys
+import pickle
+import cv2
+import numpy as np
 
 
 class Buffer:
@@ -29,6 +32,7 @@ class Buffer:
 
 
 class TCP:
+    """ server """
     def __init__(self, buff):
         self._buffer = buff
         self._host: str = '127.0.0.1'
@@ -36,6 +40,8 @@ class TCP:
         self._socket: any = None
         self.data: any = None
         self._thread = Thread(target=self.open)
+        self.buffer_size = 36864200
+        self.header_size = 38
 
     def start(self):
         self._thread.start()
@@ -48,14 +54,17 @@ class TCP:
 
         print("Server listening on {}:{}".format(self._host, self._port))
 
+        i=1
         while True:
             client_socket, client_address = self._socket.accept()
-            self.data = client_socket.recv(4096)
+            self.data = client_socket.recv(self.buffer_size)
 
-            if not self.data:
-                print('data is empty')
+            if len(self.data) < self.header_size:
+                print(f'data is empty: {len(self.data)} < {self.buffer_size}')
             else:
-                self._buffer.queue(self.data)
+                print(f'Data received and queued: Image {i}, total size: {len(self.data)}')
+                self._buffer.queue([self.data, i])
+                i += 1
 
             # try:
             #     while True:
@@ -82,23 +91,59 @@ class Process:
     def __init__(self, buff):
         self._buffer = buff
         self._thread = Thread(target=self.run)
+        self.header_size = 38
 
     def start(self):
         self._thread.start()
 
     def run(self):
         # TODO: alexandre said do not fuck the thread, but instead, stop it properly otherwise will delete everything
+
         while True:
             try:
-                item = self._buffer.dequeue()
-                print(f'item to process: {item.decode()}')
+                data = self._buffer.dequeue()
+                item = data[0]
 
-                # processing ....
-                item = item.decode()
-                print(f'item after process: {item}')
+                full_msg = b''
+                full_msg += item
+                body_size = len(item[self.header_size:])
+
+                if len(full_msg) - self.header_size == body_size:
+                    header = f'image {data[1]} : ' + item[:self.header_size].decode('utf-8')
+                    segments = header.split('_')
+                    print(segments)
+                    name = '_'.join(segments[:-2])
+                    width = int(segments[-2])
+                    height = int(segments[-1])
+                    depth = 3
+
+                    # image_received = pickle.loads(full_msg[self.header_size:])
+                    image_received = full_msg[self.header_size:]
+
+                    nparr = np.frombuffer(image_received, np.uint8)
+                    img_np = nparr.reshape((height, width, depth)).astype('uint8')  # 2-d numpy array\n",
+
+                    image_resized = self.resize_im(img_np, scale_percent=0.25)
+                    cv2.putText(image_resized, name, (12, 60), cv2.FONT_HERSHEY_COMPLEX, 1, (5, 7, 255), 2)
+
+                    cv2.imshow('window', image_resized)
+                    cv2.waitKey(0)
+
+                else:
+                    print(f'problems with length = {len(full_msg)} - {self.header_size} == {body_size}:')
 
             except IndexError:
                 pass
+
+    @staticmethod
+    def resize_im(image: np.array, scale_percent: float) -> np.array:
+        """ single resize with a factor of any input image """
+        width = int(image.shape[1] * scale_percent)
+        height = int(image.shape[0] * scale_percent)
+        dim = (width, height)
+        image_resized = cv2.resize(image, dim)
+
+        return image_resized
 
 
 def main():
