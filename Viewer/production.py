@@ -111,7 +111,6 @@ class Process:
                 if len(full_msg) - self.header_size == body_size:
                     header = f'image {data[1]} : ' + item[:self.header_size].decode('utf-8')
                     segments = header.split('_')
-                    print(segments)
                     name = '_'.join(segments[:-2])
                     width = int(segments[-2])
                     height = int(segments[-1])
