@@ -81,7 +81,7 @@ class Process:
         self._buffer = buff
         self._thread = Thread(target=self.run)
         self.header_size: int = int(params.get_value('TcpSocket', 'header_size'))
-        self._model:any = None
+        self._model: any = None
         self._load_model(str(params.get_value('Model', 'model_path')),
                          str(params.get_value('Model', 'device')))
         self.classes: list = params.get_value('Model', 'output_classes').split(',')
