@@ -17,24 +17,24 @@
     </Production>
     <Classes>
         <Seams>
-            <confidence>0.9</confidence>
-            <iou>0.5</iou>
+            <confidence>0.30</confidence>
+            <iou>0.45</iou>
         </Seams>
         <Beam>
-            <confidence>0.8</confidence>
-            <iou>0.6</iou>
+            <confidence>0.70</confidence>
+            <iou>0.45</iou>
         </Beam>
         <Souflure>
-            <confidence>0.7</confidence>
-            <iou>0.4</iou>
+            <confidence>0.35</confidence>
+            <iou>0.45</iou>
         </Souflure>
         <Hole>
-            <confidence>0.6</confidence>
-            <iou>0.3</iou>
+            <confidence>0.35</confidence>
+            <iou>0.45</iou>
         </Hole>
         <Water>
-            <confidence>0.5</confidence>
-            <iou>0.2</iou>
+            <confidence>0.70</confidence>
+            <iou>0.45</iou>
         </Water>
     </Classes>
 </config>
