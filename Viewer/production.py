@@ -8,6 +8,7 @@ import numpy as np
 from YoloV5_Onnx_detect import YoloV5OnnxSeams
 import onnxruntime
 from timeit import default_timer as timer
+from src.production_config import XMLConfig
 
 
 class Buffer:
@@ -36,15 +37,24 @@ class Buffer:
 
 class TCP:
     """ server """
-    def __init__(self, buff):
+    def __init__(self, buff, params):
         self._buffer = buff
-        self._host: str = '127.0.0.1'
-        self._port: int = 1302
+        self._host: str = str(params.get_value('TcpSocket', 'ip_to_listen'))
+        self._port: int = int(params.get_value('TcpSocket', 'port_to_listen'))
         self._socket: any = None
         self.data: any = None
         self._thread = Thread(target=self.open)
-        self.buffer_size = 36864200  # an estimation from 4096*3000*3+28
-        self.header_size = 38
+        self.buffer_size: int = int(params.get_value('TcpSocket', 'buffer_size'))  # an estimation from 4096*3000*3+28
+        self.header_size: int = int(params.get_value('TcpSocket', 'header_size'))
+
+        self.not_interest_profiles: list = params.get_value('Production', 'profile_not_of_interest').split(',')
+
+        self.image_dict = {
+            'profile': None,
+            'campaign': None,
+            'id': None,
+            'mat_image': None,
+        }
 
     def start(self):
         self._thread.start()
@@ -91,14 +101,15 @@ class TCP:
 
 
 class Process:
-    def __init__(self, buff):
+    def __init__(self, buff, params):
         self._buffer = buff
         self._thread = Thread(target=self.run)
-        self.header_size = 38
-        self._model = None
-        self._load_model('src/best_exp2_Small_v2_768_5c.onnx', 'cpu')
+        self.header_size: int = int(params.get_value('TcpSocket', 'header_size'))
+        self._model:any = None
+        self._load_model(str(params.get_value('Model', 'model_path')),
+                         str(params.get_value('Model', 'device')))
+        self.classes: list = params.get_value('Model', 'output_classes').split(',')
         self.inference = YoloV5OnnxSeams()
-        self.classes = ['Seams', 'Beam', 'Souflure', 'Hole', 'Water']
 
     def start(self):
         self._thread.start()
@@ -170,9 +181,10 @@ class Process:
 
 
 def main():
+    config = XMLConfig('./src/production_config.xml')
     buffer = Buffer()
-    server = TCP(buffer)
-    process = Process(buffer)
+    server = TCP(buffer, config)
+    process = Process(buffer, config)
 
     server.start()
     process.start()

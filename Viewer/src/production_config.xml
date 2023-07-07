@@ -1,0 +1,40 @@
+<config>
+    <TcpSocket>
+        <ip_to_listen>127.0.0.1</ip_to_listen>
+        <port_to_listen>1302</port_to_listen>
+        <buffer_size>36864200</buffer_size>
+        <header_size>38</header_size>
+    </TcpSocket>
+    <Model>
+        <model_path>./src/best_exp2_Small_v2_768_5c.onnx</model_path>
+        <output_classes>Seams, Beam, Souflure, Hole, Water</output_classes>
+        <device>cpu</device>
+    </Model>
+    <Production>
+        <saving_folder>D:/Defects/</saving_folder>
+        <profile_of_interest>ZH026, ZH028, ZH024, ZH030</profile_of_interest>
+        <profile_not_of_interest>X, ZB, ZE, ZH010, ZH012, ZH014, ZH016, ZI140, ZI160, ZI180, ZI200, ZI220, ZI240, ZI270, ZI300, ZI330, ZI360, ZI400, ZW0, ZW104, ZW105, ZW108, ZW124, ZW126, ZW145, ZW146, ZW165, ZW167, ZW186</profile_not_of_interest>
+    </Production>
+    <Classes>
+        <Seams>
+            <confidence>0.9</confidence>
+            <iou>0.5</iou>
+        </Seams>
+        <Beam>
+            <confidence>0.8</confidence>
+            <iou>0.6</iou>
+        </Beam>
+        <Souflure>
+            <confidence>0.7</confidence>
+            <iou>0.4</iou>
+        </Souflure>
+        <Hole>
+            <confidence>0.6</confidence>
+            <iou>0.3</iou>
+        </Hole>
+        <Water>
+            <confidence>0.5</confidence>
+            <iou>0.2</iou>
+        </Water>
+    </Classes>
+</config>
