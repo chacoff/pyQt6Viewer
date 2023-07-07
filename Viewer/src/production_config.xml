@@ -12,8 +12,8 @@
     </Model>
     <Production>
         <saving_folder>D:/Defects/</saving_folder>
-        <profile_of_interest>ZH026, ZH028, ZH024, ZH030</profile_of_interest>
-        <profile_not_of_interest>X, ZB, ZE, ZH010, ZH012, ZH014, ZH016, ZI140, ZI160, ZI180, ZI200, ZI220, ZI240, ZI270, ZI300, ZI330, ZI360, ZI400, ZW0, ZW104, ZW105, ZW108, ZW124, ZW126, ZW145, ZW146, ZW165, ZW167, ZW186</profile_not_of_interest>
+        <profile_of_interest>ZH026,ZH028,ZH024,ZH030</profile_of_interest>
+        <profile_not_of_interest>X,ZB,ZE,ZH010,ZH012,ZH014,ZH016,ZI140,ZI160,ZI180,ZI200,ZI220,ZI240,ZI270,ZI300,ZI330,ZI360,ZI400,ZW0,ZW104,ZW105,ZW108,ZW124,ZW126,ZW145,ZW146,ZW165,ZW167,ZW186</profile_not_of_interest>
     </Production>
     <Classes>
         <Seams>

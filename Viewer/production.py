@@ -47,15 +47,6 @@ class TCP:
         self.buffer_size: int = int(params.get_value('TcpSocket', 'buffer_size'))  # an estimation from 4096*3000*3+28
         self.header_size: int = int(params.get_value('TcpSocket', 'header_size'))
 
-        self.not_interest_profiles: list = params.get_value('Production', 'profile_not_of_interest').split(',')
-
-        self.image_dict = {
-            'profile': None,
-            'campaign': None,
-            'id': None,
-            'mat_image': None,
-        }
-
     def start(self):
         self._thread.start()
 
@@ -67,7 +58,6 @@ class TCP:
 
         print("Server listening on {}:{}".format(self._host, self._port))
 
-        i = 1
         while True:
             client_socket, client_address = self._socket.accept()
             self.data = client_socket.recv(self.buffer_size)
@@ -75,22 +65,8 @@ class TCP:
             if len(self.data) < self.header_size:
                 print(f'data is empty: {len(self.data)} < {self.buffer_size}')
             else:
-                print(f'Data received and queued: Image {i}, total size: {len(self.data)}')
-                self._buffer.queue([self.data, i])
-                i += 1
-
-            # try:
-            #     while True:
-            #         self.data = client_socket.recv(1024)
-            #
-            #         if not self.data:
-            #             print('no data')
-            #             break
-            #
-            #         self._buffer.queue(self.data)
-            #
-            # except ConnectionResetError:
-            #     print('Connection error')
+                print(f'Data received and queued: Image total size: {len(self.data)}')
+                self._buffer.queue(self.data)
 
             client_socket.close()
 
@@ -109,6 +85,7 @@ class Process:
         self._load_model(str(params.get_value('Model', 'model_path')),
                          str(params.get_value('Model', 'device')))
         self.classes: list = params.get_value('Model', 'output_classes').split(',')
+        self.not_interest_profiles: list = params.get_value('Production', 'profile_not_of_interest').split(',')
         self.inference = YoloV5OnnxSeams()
 
     def start(self):
@@ -120,43 +97,70 @@ class Process:
         while True:
             try:
                 data = self._buffer.dequeue()
-                item = data[0]
 
-                full_msg = b''
-                full_msg += item
-                body_size = len(item[self.header_size:])
+                mat_image, current_info = self.decode_payload(data, self.header_size)
 
-                if len(full_msg) - self.header_size == body_size:
-                    header = f'image {data[1]} : ' + item[:self.header_size].decode('utf-8')
-                    segments = header.split('_')
-                    name = '_'.join(segments[:-2])
-                    width = int(segments[-2])
-                    height = int(segments[-1])
-                    depth = 3
-
-                    # image_received = pickle.loads(full_msg[self.header_size:])
-                    image_received = full_msg[self.header_size:]
-
-                    nparr = np.frombuffer(image_received, np.uint8)
-                    img_np = nparr.reshape((height, width, depth)).astype('uint8')  # 2-d numpy array\n",
-
+                if str(current_info['profile']) in self.not_interest_profiles:
+                    print('%s: Profile of no interest' % current_info['profile'])
+                else:
                     t0 = timer()
-                    self.inference.process_image(self.classes, self._model, img_np)
+                    self.inference.process_image(self.classes, self._model, mat_image)
                     predictions = self.inference.return_predictions()
                     t1 = timer()
+
                     print(f'Inference time: %.2f ms' % ((t1-t0) * 1000.0))
                     print(predictions)
 
-                    # image_resized = self.resize_im(img_np, scale_percent=0.25)
-                    # cv2.putText(image_resized, name, (12, 60), cv2.FONT_HERSHEY_COMPLEX, 1, (5, 7, 255), 2)
-                    # cv2.imshow('window', image_resized)
-                    # cv2.waitKey(0)
-
-                else:
-                    print(f'problems with length = {len(full_msg)} - {self.header_size} == {body_size}:')
-
             except IndexError:
                 pass
+
+    @staticmethod
+    def decode_payload(item: bytes, header_size: int, debug: bool = False) -> any:
+        """
+        Decode the incoming message from bytes
+            :param item: the payload in bytes
+            :param header_size: typically is 38 and looks like this: ZH026_3260_154200_TX39406066_4096_3000
+            :param debug: bool to write or not an image
+            :return: a numpy image and a dictionary with the info
+        """
+        full_msg = b''
+        full_msg += item
+        body_size = len(item[header_size:])  # for the Seams Camera Baumer HXG20 is 4096x300x3 = 36864000
+
+        if len(full_msg) - header_size == body_size:
+
+            header = item[:header_size].decode('utf-8')
+            segments = header.split('_')
+            name = '_'.join(segments[:-2])  # profile_campaign_beamID_position
+            profile = str(segments[0])
+            campaign = str(segments[1])
+            beam_id = str(segments[2])
+            position = str(segments[3])
+            width = int(segments[4])
+            height = int(segments[5])
+            depth = 3
+
+            # image_received = pickle.loads(full_msg[self.header_size:])
+            image_received = full_msg[header_size:]
+            nparr = np.frombuffer(image_received, np.uint8)
+            img_np = nparr.reshape((height, width, depth)).astype('uint8')  # 2-d numpy array\n",
+
+            if debug:
+                cv2.putText(img_np, name, (12, 60), cv2.FONT_HERSHEY_COMPLEX, 1, (5, 7, 255), 2)
+                cv2.imwrite(f'{name}.bmp', img_np)
+
+            current_image_info = {
+                'name': name,
+                'profile': profile,
+                'campaign': campaign,
+                'beam_id': beam_id,
+                'position': position,
+            }
+
+            return img_np, current_image_info
+        else:
+            print(f'problems with length = {len(full_msg)} - {header_size} == {body_size}:')
+            return
 
     @staticmethod
     def resize_im(image: np.array, scale_percent: float) -> np.array:
