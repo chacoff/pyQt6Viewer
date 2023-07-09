@@ -34,7 +34,16 @@ SET PATH=%CONDA%\Scripts;%CONDA%\envs\seams;%PATH%
 	exit
 
 :UNKNOWN
-echo "Unknown PC. Please define Conda Path and path location"
-pause
+echo "Unknown PC ... trying to locate Conda"
+timeout /t 2 >nul
+
+	SET CONDA_1=C:\Users\%USERNAME%\Anaconda3
+	SET CONDA_2=C:\Users\%USERNAME%\miniconda3
+	SET PATH=%CONDA_1%\Scripts;%CONDA_1%\envs\seams;%CONDA_2%\Scripts;%CONDA_2%\envs\seams;%PATH%
+
+	if not DEFINED IS_MINIMIZED set IS_MINIMIZED=1 && start "" /min "%~dpnx0" %* && exit
+		CALL activate seams
+		START pythonw main.py
+	exit
 
 @echo ON
