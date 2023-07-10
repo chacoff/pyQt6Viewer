@@ -44,7 +44,7 @@ class TCP:
         self._socket: any = None
         self.data: any = None
         self._thread = Thread(target=self.open)
-        self.buffer_size: int = int(params.get_value('TcpSocket', 'buffer_size'))  # an estimation from 4096*3000*3+28
+        self.buffer_size: int = int(params.get_value('TcpSocket', 'buffer_size'))  # an estimation from 4096*3000*3+40
         self.header_size: int = int(params.get_value('TcpSocket', 'header_size'))
 
     def start(self):
@@ -98,7 +98,7 @@ class Process:
             try:
                 data = self._buffer.dequeue()
 
-                mat_image, current_info = self.decode_payload(data, self.header_size)
+                mat_image, current_info = self.decode_payload(data, self.header_size, debug=False)
 
                 if str(current_info['profile']) in self.not_interest_profiles:
                     print('%s: Profile of no interest' % current_info['profile'])
@@ -138,7 +138,7 @@ class Process:
             position = str(segments[3])
             width = int(segments[4])
             height = int(segments[5])
-            depth = 3
+            depth = int(segments[6])
 
             # image_received = pickle.loads(full_msg[self.header_size:])
             image_received = full_msg[header_size:]
