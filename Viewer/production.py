@@ -1,14 +1,15 @@
 from collections import deque
-from threading import Lock, Thread, Event
+from threading import Lock, Thread
 import socket
 import sys
-import pickle
 import cv2
 import numpy as np
 from YoloV5_Onnx_detect import YoloV5OnnxSeams
 import onnxruntime
 from timeit import default_timer as timer
 from src.production_config import XMLConfig
+import pyodbc
+import datetime
 
 
 class Buffer:
@@ -79,7 +80,7 @@ class TCP:
                         print(f'data is empty: {len(self.data)} < {self.buffer_size}')
                         self.data = None
                     elif len(self.data) >= self.buffer_size:
-                        print(f'Data received and queued: Image total size: {len(self.data)}')
+                        print(f'Data received and queued - Message total size: {len(self.data)}')
                         self._buffer.queue(self.data)
                         self.data = None
                     else:
@@ -116,6 +117,18 @@ class Process:
         self.not_interest_profiles: list = params.get_value('Production', 'profile_not_of_interest').split(',')
         self.inference = YoloV5OnnxSeams()
 
+        # DB
+        self.conn_string = 'DRIVER={SQL Server};' \
+                           'SERVER=AZR-SQL-MIAUT;' \
+                           'DATABASE=SEAMS_DETECTIONS;' \
+                           'UID=SEAMS-DETECT_Publisher;' \
+                           'PWD=AMseams2023q2'
+
+        self.conn = pyodbc.connect(self.conn_string)
+
+        self.cursor = self.conn.cursor()
+        self.db_insert()  # only a trial
+
     def start(self):
         self._thread.start()
 
@@ -136,11 +149,47 @@ class Process:
                     predictions = self.inference.return_predictions()
                     t1 = timer()
 
-                    print(f'Inference time: %.2f ms' % ((t1-t0) * 1000.0))
-                    print(predictions)
+                    classification = self.classifier(predictions)
+                    print(f'{classification} - inference time: %.2f ms' % ((t1-t0) * 1000.0))
 
             except IndexError:
                 pass
+
+    def db_insert(self):
+        query = """
+            SELECT TOP 1
+            [ID_TM_PART]
+            FROM [SEAMS_DETECTIONS].[dbo].[BEAM_INFO]
+            ORDER BY [dateTime] DESC
+            """
+
+        self.cursor.execute(query)
+        rows = self.cursor.fetchall()
+        for row in rows:
+            print(row[0])
+
+        # insert_query = f"INSERT INTO dbo.BEAM_INFO (seamsCount, imageCount, seamsRate, dateTime, ID_TM_PART, GRP_MONT, NUM_MONT, LONG_L1DD, FL_MSG_TRAITE, NBRE_DEFT, ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        #
+        # self.cursor.execute(insert_query, (5, 200, 0.025, datetime, 159357, 'ZH026', 3250, 0, 0, 0, 5588))
+        # self.conn.commit()
+        #
+        self.cursor.close()
+        self.conn.close()
+
+    @staticmethod
+    def classifier(preds) -> str:
+        """ classify the image to one single class """
+
+        classif_hole = [c.class_name for c in preds if c.class_name == 'Hole']
+        classif_seams = [c.class_name for c in preds if c.class_name == 'Seams']
+
+        if classif_hole:
+            return 'Hole'
+
+        if classif_seams:
+            return 'Seams'
+
+        return 'Beam'
 
     @staticmethod
     def decode_payload(item: bytes, header_size: int, debug: bool = False) -> any:
@@ -149,7 +198,7 @@ class Process:
             :param item: the payload in bytes
             :param header_size: typically is 38 and looks like this: ZH026_3260_154200_TX39406066_4096_3000
             :param debug: bool to write or not an image
-            :return: a numpy image and a dictionary with the info
+            :return: a numpy array (image) and a dictionary with the info
         """
         full_msg = b''
         full_msg += item
@@ -160,9 +209,9 @@ class Process:
             header = item[:header_size].decode('utf-8')
             segments = header.split('_')
             name = '_'.join(segments[:-2])  # profile_campaign_beamID_position
-            profile = str(segments[0])
-            campaign = str(segments[1])
-            beam_id = str(segments[2])
+            profile = str(segments[0])  # GRP_MONT
+            campaign = str(segments[1])  # NOM_MONT
+            beam_id = str(segments[2])  # ID_TM_PART
             position = str(segments[3])
             width = int(segments[4])
             height = int(segments[5])

@@ -498,7 +498,7 @@ class MainWindow(QMainWindow):
     
         # Final classification of the model, Seams if there is at least one seams detected
         classification = [c.class_name for c in predictions if c.class_name == 'Seams']
-            
+
         if len(classification) == 0:  # it means no seams where detected in the beam
             # here's the first time the image is included in self.matrix_dict
             self.matrix_dict[self.current_image_name] = "NoSeams"

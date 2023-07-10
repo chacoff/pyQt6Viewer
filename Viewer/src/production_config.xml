@@ -2,7 +2,7 @@
     <TcpSocket>
         <ip_to_listen>127.0.0.1</ip_to_listen>
         <port_to_listen>1302</port_to_listen>
-        <buffer_size>2228264</buffer_size> <!-- 2228270 or 36864040-->
+        <buffer_size>2228270</buffer_size> <!-- 2228270 or 36864040-->
         <header_size>40</header_size>
     </TcpSocket>
     <Model>
