@@ -1,5 +1,5 @@
 from collections import deque
-from threading import Lock, Thread
+from threading import Lock, Thread, Event
 import socket
 import sys
 import pickle
@@ -44,6 +44,7 @@ class TCP:
         self._socket: any = None
         self.data: any = None
         self._thread = Thread(target=self.open)
+        self.is_running = False
         self.buffer_size: int = int(params.get_value('TcpSocket', 'buffer_size'))  # an estimation from 4096*3000*3+40
         self.header_size: int = int(params.get_value('TcpSocket', 'header_size'))
 
@@ -55,25 +56,39 @@ class TCP:
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.bind((self._host, self._port))
         self._socket.listen(1)
-
         print("Server listening on {}:{}".format(self._host, self._port))
 
-        while True:
-            client_socket, client_address = self._socket.accept()
-            self.data = client_socket.recv(self.buffer_size)
+        client_socket, client_address = self._socket.accept()
+        self.on_connect(client_address)
 
-            if len(self.data) < self.header_size:
-                print(f'data is empty: {len(self.data)} < {self.buffer_size}')
-            else:
-                print(f'Data received and queued: Image total size: {len(self.data)}')
-                self._buffer.queue(self.data)
+        try:
+            while self.is_running:
+                self.data = client_socket.recv(self.buffer_size)
 
-            client_socket.close()
+                if len(self.data) < self.header_size or len(self.data) < self.buffer_size:
+                    print(f'data is empty: {len(self.data)} < {self.buffer_size}')
+                    self.data = None
+                elif len(self.data) >= self.buffer_size:
+                    print(f'Data received and queued: Image total size: {len(self.data)}')
+                    self._buffer.queue(self.data)
+                    self.data = None
+                else:
+                    continue
+        except ConnectionResetError:
+            self.on_close()
 
-    def close(self) -> None:
+    def on_connect(self, peer):
+        self.is_running = True
+        print(f"MSC connected: {peer}")
+
+    def on_disconnect(self):
+        self.is_running = False
+        print("MSC disconnected.")
+
+    def on_close(self) -> None:
         if self._socket is not None:
             self._socket.close()
-            print('Server stopped')
+            self.on_disconnect()
 
 
 class Process:
@@ -144,6 +159,9 @@ class Process:
             image_received = full_msg[header_size:]
             nparr = np.frombuffer(image_received, np.uint8)
             img_np = nparr.reshape((height, width, depth)).astype('uint8')  # 2-d numpy array\n",
+
+            if depth == 1:
+                img_np = cv2.merge((img_np, img_np, img_np))
 
             if debug:
                 cv2.putText(img_np, name, (12, 60), cv2.FONT_HERSHEY_COMPLEX, 1, (5, 7, 255), 2)
