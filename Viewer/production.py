@@ -43,13 +43,19 @@ class TCP:
         self._port: int = int(params.get_value('TcpSocket', 'port_to_listen'))
         self._socket: any = None
         self.data: any = None
-        self._thread = Thread(target=self.open)
+        self._thread = None # Thread(target=self.open)
         self.is_running = False
         self.buffer_size: int = int(params.get_value('TcpSocket', 'buffer_size'))  # an estimation from 4096*3000*3+40
         self.header_size: int = int(params.get_value('TcpSocket', 'header_size'))
 
     def start(self):
-        self._thread.start()
+        if not self.is_running:
+            self.is_running = True
+            self._thread = Thread(target=self.open)
+            self._thread.start()
+
+    def stop(self):
+        self.is_running = False
 
     def open(self) -> any:
         """ open the socket and receive data """
@@ -58,37 +64,44 @@ class TCP:
         self._socket.listen(1)
         print("Server listening on {}:{}".format(self._host, self._port))
 
-        client_socket, client_address = self._socket.accept()
-        self.on_connect(client_address)
+        while self.is_running:
+            client_socket, client_address = self._socket.accept()
+            self.on_connect(client_address)
 
-        try:
-            while self.is_running:
-                self.data = client_socket.recv(self.buffer_size)
+            try:
+                while self.is_running:
+                    self.data = client_socket.recv(self.buffer_size)
 
-                if len(self.data) < self.header_size or len(self.data) < self.buffer_size:
-                    print(f'data is empty: {len(self.data)} < {self.buffer_size}')
-                    self.data = None
-                elif len(self.data) >= self.buffer_size:
-                    print(f'Data received and queued: Image total size: {len(self.data)}')
-                    self._buffer.queue(self.data)
-                    self.data = None
-                else:
-                    continue
-        except ConnectionResetError:
-            self.on_close()
+                    if not self.data:
+                        break
 
-    def on_connect(self, peer):
+                    if len(self.data) < self.header_size or len(self.data) < self.buffer_size:
+                        print(f'data is empty: {len(self.data)} < {self.buffer_size}')
+                        self.data = None
+                    elif len(self.data) >= self.buffer_size:
+                        print(f'Data received and queued: Image total size: {len(self.data)}')
+                        self._buffer.queue(self.data)
+                        self.data = None
+                    else:
+                        continue
+
+            except ConnectionResetError:
+                client_socket.close()
+                self.on_close()
+
+    def on_connect(self, peer) -> None:
         self.is_running = True
         print(f"MSC connected: {peer}")
 
-    def on_disconnect(self):
+    def on_disconnect(self) -> None:
         self.is_running = False
-        print("MSC disconnected.")
+        print("MSC disconnected")
 
     def on_close(self) -> None:
         if self._socket is not None:
             self._socket.close()
-            self.on_disconnect()
+        self.on_disconnect()
+        self.start()
 
 
 class Process:
