@@ -173,7 +173,7 @@ class Process:
             except IndexError:
                 pass
 
-    def db_insert(self, _seams: int, _images: int, _beam_id: int, _profile: str, _campaign: int, _id: int):
+    def db_insert(self, _seams: int, _images: int, _beam_id: int, _profile: str, _campaign: int, _id: int) -> None:
         """ insert the information of a new beam """
         insert_query = f"INSERT INTO dbo.BEAM_INFO (" \
                        f"seamsCount, " \
