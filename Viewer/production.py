@@ -173,7 +173,7 @@ class Process:
             except IndexError:
                 pass
 
-    def db_insert(self):
+    def db_insert(self, _seams: int, _images: int, _beam_id: int, _profile: str, _campaign: int, _id: int):
         """ insert the information of a new beam """
         insert_query = f"INSERT INTO dbo.BEAM_INFO (" \
                        f"seamsCount, " \
@@ -189,7 +189,8 @@ class Process:
                        f"ID) " \
                        f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
-        self.cursor.execute(insert_query, (5, 200, 0.025, datetime, 159357, 'ZH026', 3250, 0, 0, 0, 5588))
+        _rate: float = _seams / _images
+        self.cursor.execute(insert_query, (_seams, _images, _rate, datetime, _beam_id, _profile, _campaign, 0, 0, 0, _id))
         self.conn.commit()
 
         self.cursor.close()
