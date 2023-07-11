@@ -2,6 +2,7 @@ from collections import deque
 from threading import Lock, Thread
 import socket
 import sys
+from typing import Dict, Union
 import cv2
 import numpy as np
 from YoloV5_Onnx_detect import YoloV5OnnxSeams
@@ -10,6 +11,7 @@ from timeit import default_timer as timer
 from src.production_config import XMLConfig
 import pyodbc
 import datetime
+import copy
 
 
 class Buffer:
@@ -43,8 +45,8 @@ class TCP:
         self._host: str = str(params.get_value('TcpSocket', 'ip_to_listen'))
         self._port: int = int(params.get_value('TcpSocket', 'port_to_listen'))
         self._socket: any = None
-        self.data: any = None
-        self._thread = None # Thread(target=self.open)
+        self.data: bytes = b''
+        self._thread = None  # Thread(target=self.open)
         self.is_running = False
         self.buffer_size: int = int(params.get_value('TcpSocket', 'buffer_size'))  # an estimation from 4096*3000*3+40
         self.header_size: int = int(params.get_value('TcpSocket', 'header_size'))
@@ -66,25 +68,29 @@ class TCP:
         print("Server listening on {}:{}".format(self._host, self._port))
 
         while self.is_running:
-            client_socket, client_address = self._socket.accept()
+            try:
+                client_socket, client_address = self._socket.accept()
+            except OSError:
+                pass
             self.on_connect(client_address)
 
             try:
                 while self.is_running:
-                    self.data = client_socket.recv(self.buffer_size)
+                    try:
+                        self.data = self.data + client_socket.recv(self.buffer_size-len(self.data))
+                    except OSError:
+                        self.on_disconnect()
 
                     if not self.data:
                         break
 
-                    if len(self.data) < self.header_size or len(self.data) < self.buffer_size:
-                        print(f'data is empty: {len(self.data)} < {self.buffer_size}')
-                        self.data = None
-                    elif len(self.data) >= self.buffer_size:
-                        print(f'Data received and queued - Message total size: {len(self.data)}')
-                        self._buffer.queue(self.data)
-                        self.data = None
-                    else:
+                    if len(self.data) != self.buffer_size:
+                        print(f'data is not completed: {len(self.data)} < {self.buffer_size}')
                         continue
+
+                    print(f'Data received and queued - Message total size: {len(self.data)}')
+                    self._buffer.queue(copy.deepcopy(self.data))
+                    self.data = b''
 
             except ConnectionResetError:
                 client_socket.close()
@@ -95,7 +101,7 @@ class TCP:
         print(f"MSC connected: {peer}")
 
     def on_disconnect(self) -> None:
-        self.is_running = False
+        # self.is_running = False
         print("MSC disconnected")
 
     def on_close(self) -> None:
@@ -117,6 +123,19 @@ class Process:
         self.not_interest_profiles: list = params.get_value('Production', 'profile_not_of_interest').split(',')
         self.inference = YoloV5OnnxSeams()
 
+        # current info
+        self.current_image_info: Dict[str, Union[str, str, str, int, str, int, int, int]] = {
+            'name': None,
+            'profile': None,
+            'campaign': None,
+            'beam_id': None,
+            'position': None,
+            'n_images': 0,  # number of images of one beam defined as beam_id or ID_TM_PART
+            'Seams': 0,
+            'Hole': 0,
+        }
+        self.last_beam_id: int = 115599
+
         # DB
         self.conn_string = 'DRIVER={SQL Server};' \
                            'SERVER=AZR-SQL-MIAUT;' \
@@ -127,22 +146,19 @@ class Process:
         self.conn = pyodbc.connect(self.conn_string)
 
         self.cursor = self.conn.cursor()
-        self.db_insert()  # only a trial
 
     def start(self):
         self._thread.start()
 
     def run(self):
-        # TODO: alexandre said do not fuck the thread, but instead, stop it properly otherwise will delete everything
-
         while True:
             try:
                 data = self._buffer.dequeue()
 
-                mat_image, current_info = self.decode_payload(data, self.header_size, debug=False)
+                mat_image = self.decode_payload(data, self.header_size, debug=False)
 
-                if str(current_info['profile']) in self.not_interest_profiles:
-                    print('%s: Profile of no interest' % current_info['profile'])
+                if str(self.current_image_info['profile']) in self.not_interest_profiles:
+                    print('%s: Profile of no interest' % self.current_image_info['profile'])
                 else:
                     t0 = timer()
                     self.inference.process_image(self.classes, self._model, mat_image)
@@ -152,53 +168,96 @@ class Process:
                     classification = self.classifier(predictions)
                     print(f'{classification} - inference time: %.2f ms' % ((t1-t0) * 1000.0))
 
+                    self.db_job()
+
             except IndexError:
                 pass
 
     def db_insert(self):
-        query = """
-            SELECT TOP 1
-            [ID_TM_PART]
-            FROM [SEAMS_DETECTIONS].[dbo].[BEAM_INFO]
-            ORDER BY [dateTime] DESC
-            """
+        """ insert the information of a new beam """
+        insert_query = f"INSERT INTO dbo.BEAM_INFO (" \
+                       f"seamsCount, " \
+                       f"imageCount, " \
+                       f"seamsRate, " \
+                       f"dateTime, " \
+                       f"ID_TM_PART, " \
+                       f"GRP_MONT, " \
+                       f"NUM_MONT, " \
+                       f"LONG_L1DD, " \
+                       f"FL_MSG_TRAITE, " \
+                       f"NBRE_DEFT, " \
+                       f"ID) " \
+                       f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
-        self.cursor.execute(query)
-        rows = self.cursor.fetchall()
-        for row in rows:
-            print(row[0])
+        self.cursor.execute(insert_query, (5, 200, 0.025, datetime, 159357, 'ZH026', 3250, 0, 0, 0, 5588))
+        self.conn.commit()
 
-        # insert_query = f"INSERT INTO dbo.BEAM_INFO (seamsCount, imageCount, seamsRate, dateTime, ID_TM_PART, GRP_MONT, NUM_MONT, LONG_L1DD, FL_MSG_TRAITE, NBRE_DEFT, ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        #
-        # self.cursor.execute(insert_query, (5, 200, 0.025, datetime, 159357, 'ZH026', 3250, 0, 0, 0, 5588))
-        # self.conn.commit()
-        #
         self.cursor.close()
         self.conn.close()
 
-    @staticmethod
-    def classifier(preds) -> str:
-        """ classify the image to one single class """
+    def db_update(self):
+        pass
+
+    def db_consult(self) -> int:
+        """ return the last ID_TM_PART on the database"""
+        query = """
+                    SELECT TOP 1
+                    [ID_TM_PART]
+                    FROM [SEAMS_DETECTIONS].[dbo].[BEAM_INFO]
+                    ORDER BY [dateTime] DESC
+                    """
+
+        self.cursor.execute(query)
+        rows = self.cursor.fetchall()
+
+        beam_id: int = 115599 # default init value
+        for row in rows:
+            beam_id = row[0]  # ID_TM_PART
+
+        self.cursor.close()
+        self.conn.close()
+
+        return beam_id
+
+    def db_job(self) -> None:
+
+        if self.current_image_info['beam_id'] == self.last_beam_id:
+            print(f'Update according Beam_ID (ID_TM_PART): {self.current_image_info.get("beam_id")} -- {self.current_image_info}')
+        else:
+            self.last_beam_id = self.current_image_info['beam_id']
+            print(f'Insert according Beam_ID (ID_TM_PART): {self.current_image_info.get("beam_id")} -- {self.current_image_info}')
+
+    def classifier(self, preds) -> str:
+        """ classify the image to one single class and update counters """
+
+        if self.current_image_info['beam_id'] != self.last_beam_id:
+            self.current_image_info['n_images'] = 0
+            self.current_image_info['Seams'] = 0
+            self.current_image_info['Hole'] = 0
 
         classif_hole = [c.class_name for c in preds if c.class_name == 'Hole']
         classif_seams = [c.class_name for c in preds if c.class_name == 'Seams']
 
         if classif_hole:
+            self.current_image_info['Hole'] += 1
+            self.current_image_info['n_images'] += 1
             return 'Hole'
 
         if classif_seams:
+            self.current_image_info['Seams'] += 1
+            self.current_image_info['n_images'] += 1
             return 'Seams'
 
+        self.current_image_info['n_images'] += 1
         return 'Beam'
 
-    @staticmethod
-    def decode_payload(item: bytes, header_size: int, debug: bool = False) -> any:
+    def decode_payload(self, item: bytes, header_size: int, debug: bool = False) -> np.array:
         """
         Decode the incoming message from bytes
             :param item: the payload in bytes
             :param header_size: typically is 38 and looks like this: ZH026_3260_154200_TX39406066_4096_3000
             :param debug: bool to write or not an image
-            :return: a numpy array (image) and a dictionary with the info
+            :return: a numpy array (image)
         """
         full_msg = b''
         full_msg += item
@@ -229,15 +288,13 @@ class Process:
                 cv2.putText(img_np, name, (12, 60), cv2.FONT_HERSHEY_COMPLEX, 1, (5, 7, 255), 2)
                 cv2.imwrite(f'{name}.bmp', img_np)
 
-            current_image_info = {
-                'name': name,
-                'profile': profile,
-                'campaign': campaign,
-                'beam_id': beam_id,
-                'position': position,
-            }
+            self.current_image_info['name'] = name
+            self.current_image_info['profile'] = profile
+            self.current_image_info['campaign'] = campaign
+            self.current_image_info['beam_id'] = beam_id
+            self.current_image_info['position'] = position
 
-            return img_np, current_image_info
+            return img_np
         else:
             print(f'problems with length = {len(full_msg)} - {header_size} == {body_size}:')
             return
