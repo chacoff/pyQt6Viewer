@@ -5,6 +5,10 @@
         <buffer_size>2228264</buffer_size> <!-- 2228264 or 36864040-->
         <header_size>40</header_size>
     </TcpSocket>
+    <Viewer>
+        <default_dataset>C:/Users/gomezja/PycharmProjects/00_dataset\dev</default_dataset>
+        <default_model>./src</default_model>
+    </Viewer>
     <Model>
         <model_path>./src/best_exp2_Small_v2_768_5c.onnx</model_path>
         <output_classes>Seams,Beam,Souflure,Hole,Water</output_classes>

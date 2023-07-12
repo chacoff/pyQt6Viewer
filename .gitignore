@@ -17,3 +17,5 @@
 Viewer/matrix/
 Training/runs/train/
 /trials/deprecated/
+/Viewer/production.spec
+/Viewer/build_instruction.txt

@@ -15,7 +15,7 @@ import pandas as pd
 from Matrix import create_matrix
 import sqlite3
 import onnxruntime
-from src.config_file import ConfigLoader
+from src.production_config import XMLConfig
 
 
 class MainWindow(QMainWindow):
@@ -38,8 +38,9 @@ class MainWindow(QMainWindow):
         self.matrix_img = self.unique_file('matrix/confusion_matrix_1.png')
 
         # Config
-        self.default_folder = ConfigLoader().get_folder()
-        self.default_model = ConfigLoader().get_model()
+        config = XMLConfig('./src/production_config.xml')
+        self.default_folder = str(config.get_value('Viewer', 'default_dataset'))
+        self.default_model = str(config.get_value('Viewer', 'default_model'))
 
         # DB-sqlite
         self.db_name = self.unique_db()
@@ -385,7 +386,7 @@ class MainWindow(QMainWindow):
             self._model = onnxruntime.InferenceSession(weight, providers=['CUDAExecutionProvider'])
             return
 
-    def read_classes_file(self):
+    def read_classes_file(self) -> None:
         """ classes.names contains also color and threshold """
         classes_names_raw = []
         with open('src\\classes.names', 'rt') as file:
