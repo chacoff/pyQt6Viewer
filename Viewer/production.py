@@ -160,15 +160,19 @@ class Process:
                 if str(self.current_image_info['profile']) in self.not_interest_profiles:
                     print('%s: Profile of no interest' % self.current_image_info['profile'])
                 else:
-                    t0 = timer()
-                    self.inference.process_image(self.classes, self._model, mat_image)
-                    predictions = self.inference.return_predictions()
-                    t1 = timer()
+                    r, g, b = cv2.split(mat_image)
+                    avg: int = int(np.average(r))
 
-                    classification = self.classifier(predictions)
-                    print(f'{classification} - inference time: %.2f ms' % ((t1-t0) * 1000.0))
+                    if avg > 30:
+                        t0 = timer()
+                        self.inference.process_image(self.classes, self._model, mat_image)
+                        predictions = self.inference.return_predictions()
+                        t1 = timer()
 
-                    self.db_job()
+                        classification = self.classifier(predictions)
+                        process_msg = f'{classification} - inference time: %.2f ms' % ((t1-t0) * 1000.0)
+
+                        self.db_job(process_msg)
 
             except IndexError:
                 pass
@@ -220,13 +224,21 @@ class Process:
 
         return beam_id
 
-    def db_job(self) -> None:
+    def db_job(self, msg: str) -> None:
 
         if self.current_image_info['beam_id'] == self.last_beam_id:
-            print(f'Update according Beam_ID (ID_TM_PART): {self.current_image_info.get("beam_id")} -- {self.current_image_info}')
+            print(f'Update ID_TM_PART: {self.current_image_info.get("beam_id")} -- '
+                  f'{msg} - '
+                  f'n_images: {self.current_image_info.get("n_images")} - '
+                  f'seams: {self.current_image_info.get("Seams")} - '
+                  f'hole: {self.current_image_info.get("Hole")}')
         else:
             self.last_beam_id = self.current_image_info['beam_id']
-            print(f'Insert according Beam_ID (ID_TM_PART): {self.current_image_info.get("beam_id")} -- {self.current_image_info}')
+            print(f'>> Insert ID_TM_PART: {self.current_image_info.get("beam_id")} -- '
+                  f'{msg} - '
+                  f'n_images: {self.current_image_info.get("n_images")} - '
+                  f'seams: {self.current_image_info.get("Seams")} - '
+                  f'hole: {self.current_image_info.get("Hole")}')
 
     def classifier(self, preds) -> str:
         """ classify the image to one single class and update counters """
