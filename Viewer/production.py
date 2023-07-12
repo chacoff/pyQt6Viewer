@@ -88,7 +88,7 @@ class TCP:
                         print(f'data is not completed: {len(self.data)} < {self.buffer_size}')
                         continue
 
-                    print(f'Data received and queued - Message total size: {len(self.data)}')
+                    # print(f'Data received and queued - Message total size: {len(self.data)}')
                     self._buffer.queue(copy.deepcopy(self.data))
                     self.data = b''
 
