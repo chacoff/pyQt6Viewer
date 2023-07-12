@@ -10,7 +10,7 @@ import onnxruntime
 from timeit import default_timer as timer
 from src.production_config import XMLConfig
 import pyodbc
-import datetime
+from datetime import datetime
 import copy
 
 
@@ -160,25 +160,30 @@ class Process:
                 if str(self.current_image_info['profile']) in self.not_interest_profiles:
                     print('%s: Profile of no interest' % self.current_image_info['profile'])
                 else:
-                    r, g, b = cv2.split(mat_image)
-                    avg: int = int(np.average(r))
+                    t0 = timer()
+                    self.inference.process_image(self.classes, self._model, mat_image)
+                    predictions = self.inference.return_predictions()
+                    t1 = timer()
 
-                    if avg > 30:
-                        t0 = timer()
-                        self.inference.process_image(self.classes, self._model, mat_image)
-                        predictions = self.inference.return_predictions()
-                        t1 = timer()
+                    classification = self.classifier(predictions)
+                    process_msg = f'{classification} - inference time: %.2f ms' % ((t1-t0) * 1000.0)
 
-                        classification = self.classifier(predictions)
-                        process_msg = f'{classification} - inference time: %.2f ms' % ((t1-t0) * 1000.0)
-
-                        self.db_job(process_msg)
+                    self.db_job(process_msg)
 
             except IndexError:
                 pass
 
-    def db_insert(self, _seams: int, _images: int, _beam_id: int, _profile: str, _campaign: int, _id: int) -> None:
+    def db_insert(self) -> None:
         """ insert the information of a new beam """
+
+        _id = self.db_beam_info_max_id()
+        _now = datetime.now()
+        _seams: int = self.current_image_info.get("Seams")
+        _images: int = self.current_image_info.get("n_images")
+        _beam_id: int = self.current_image_info.get("beam_id")
+        _profile: str = self.current_image_info.get("profile")
+        _campaign: int = self.current_image_info.get("campaign")
+
         insert_query = f"INSERT INTO dbo.BEAM_INFO (" \
                        f"seamsCount, " \
                        f"imageCount, " \
@@ -194,14 +199,36 @@ class Process:
                        f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
         _rate: float = _seams / _images
-        self.cursor.execute(insert_query, (_seams, _images, _rate, datetime, _beam_id, _profile, _campaign, 0, 0, 0, _id))
+        self.cursor.execute(insert_query, (_seams, _images, _rate, _now, _beam_id, _profile, _campaign, 0, 0, 0, _id))
         self.conn.commit()
 
-        self.cursor.close()
-        self.conn.close()
+        # self.cursor.close()
+        # self.conn.close()
 
     def db_update(self):
-        pass
+        _id_tm_part: int = self.last_beam_id
+        _grp_mont: str = self.current_image_info.get('profile')
+        _num_mont: int = self.current_image_info.get('campaign')
+        _seams_count: int = self.current_image_info.get('Seams')
+        _image_count: int = self.current_image_info.get('n_images')
+        _seams_rate: float = _seams_count / _image_count
+
+        sql_query = f"""UPDATE [SEAMS_DETECTIONS].[dbo].[BEAM_INFO] SET seamsCount = ?, imageCount = ?, seamsRate = ? 
+        WHERE ID_TM_PART = ? AND GRP_MONT = ? AND NUM_MONT = ?"""
+
+        self.cursor.execute(sql_query, (_seams_count, _image_count, _seams_rate, _id_tm_part, _grp_mont, _num_mont))
+        self.conn.commit()
+
+    def db_beam_info_max_id(self) -> int:
+        query = "SELECT max(ID) as max from [SEAMS_DETECTIONS].[dbo].[BEAM_INFO]"
+        self.cursor.execute(query)
+        result = self.cursor.fetchone()
+        max_value = (result.max + 1)
+
+        # self.cursor.close()
+        # self.conn.close()
+
+        return max_value
 
     def db_consult(self) -> int:
         """ return the last ID_TM_PART on the database"""
@@ -219,8 +246,8 @@ class Process:
         for row in rows:
             beam_id = row[0]  # ID_TM_PART
 
-        self.cursor.close()
-        self.conn.close()
+        # self.cursor.close()
+        # self.conn.close()
 
         return beam_id
 
@@ -232,6 +259,7 @@ class Process:
                   f'n_images: {self.current_image_info.get("n_images")} - '
                   f'seams: {self.current_image_info.get("Seams")} - '
                   f'hole: {self.current_image_info.get("Hole")}')
+            # self.db_update()
         else:
             self.last_beam_id = self.current_image_info['beam_id']
             print(f'>> Insert ID_TM_PART: {self.current_image_info.get("beam_id")} -- '
@@ -239,11 +267,14 @@ class Process:
                   f'n_images: {self.current_image_info.get("n_images")} - '
                   f'seams: {self.current_image_info.get("Seams")} - '
                   f'hole: {self.current_image_info.get("Hole")}')
+            self.db_insert()
 
     def classifier(self, preds) -> str:
         """ classify the image to one single class and update counters """
 
         if self.current_image_info['beam_id'] != self.last_beam_id:
+            if self.current_image_info['n_images'] != 0:
+                self.db_update()  # once before resetting the counters and if n_images = 0 it means is the first beam
             self.current_image_info['n_images'] = 0
             self.current_image_info['Seams'] = 0
             self.current_image_info['Hole'] = 0
