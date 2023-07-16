@@ -134,7 +134,7 @@ class Process:
             'Seams': 0,
             'Hole': 0,
         }
-        self.last_beam_id: int = 115599
+        self.last_beam_id: int = 915599
 
         # DB
         self.conn_string = 'DRIVER={SQL Server};' \
@@ -174,7 +174,7 @@ class Process:
                 pass
 
     def db_insert(self) -> None:
-        """ insert the information of a new beam """
+        """ insert the information of a new beam as soon as we scan the first image """
 
         _id = self.db_beam_info_max_id()
         _now = datetime.now()
@@ -198,20 +198,21 @@ class Process:
                        f"ID) " \
                        f"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
-        _rate: float = _seams / _images
+        _rate: float = round(_seams / _images, 3)
         self.cursor.execute(insert_query, (_seams, _images, _rate, _now, _beam_id, _profile, _campaign, 0, 0, 0, _id))
         self.conn.commit()
 
         # self.cursor.close()
         # self.conn.close()
 
-    def db_update(self):
+    def db_update(self) -> None:
+        """ DB is updated once the next Beam is coming, i.e., once we finished to scanned the previous beam"""
         _id_tm_part: int = self.last_beam_id
         _grp_mont: str = self.current_image_info.get('profile')
         _num_mont: int = self.current_image_info.get('campaign')
         _seams_count: int = self.current_image_info.get('Seams')
         _image_count: int = self.current_image_info.get('n_images')
-        _seams_rate: float = _seams_count / _image_count
+        _seams_rate: float = round(_seams_count / _image_count, 3)
 
         sql_query = f"""UPDATE [SEAMS_DETECTIONS].[dbo].[BEAM_INFO] SET seamsCount = ?, imageCount = ?, seamsRate = ? 
         WHERE ID_TM_PART = ? AND GRP_MONT = ? AND NUM_MONT = ?"""
@@ -378,5 +379,6 @@ def main():
 if __name__ == '__main__':
 
     main()
+    sys.ps1 = 'H-engine v1'
     sys.exit(0)
 
