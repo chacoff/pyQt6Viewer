@@ -68,21 +68,21 @@ namespace SeamsShadow
 
             await Task.WhenAll(MscTask, EngineTask);
 
-            if (MscTask.Result && EngineTask.Result)
-            {
-                log.Info("MSC and H-engine are running");
-            }
+            //if (MscTask.Result && EngineTask.Result)
+            //{
+            //    log.Info("MSC and H-engine are running");
+            //}
             
             if (!MscTask.Result)
             {
                 StartApplication(mscPath);
-                log.Info("MSC started");
+                log.Info("MSC re-started");
             }
             
             if (!EngineTask.Result)
             {
                 StartApplication(enginePath);
-                log.Info("H-engine started");
+                log.Info("H-engine re-started");
             }
         }
 
