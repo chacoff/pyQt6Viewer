@@ -19,3 +19,6 @@ Training/runs/train/
 /trials/deprecated/
 /Viewer/production.spec
 /Viewer/build_instruction.txt
+ShadowStarter/SeamsShadow/bin/Debug/net6.0-windows10.0.22621.0/SeamsShadow.deps.json
+ShadowStarter/SeamsShadow/bin/
+ShadowStarter/SeamsShadow/obj/
