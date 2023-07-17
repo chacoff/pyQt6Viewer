@@ -213,7 +213,7 @@ class MainWindow(QMainWindow):
         self.images_slider.setMinimum(0)
         self.images_slider.setMaximum(100)
         self.images_slider.setSingleStep(1)
-        self.images_slider.valueChanged.connect(self.panel_view.set_brightness)
+        # self.images_slider.valueChanged.connect(self.panel_view.set_brightness)
         self.images_slider.setValue(0)
         self.images_slider.setStyleSheet("""
                     QSlider {
