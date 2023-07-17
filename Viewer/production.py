@@ -12,6 +12,7 @@ from src.production_config import XMLConfig
 import pyodbc
 from datetime import datetime
 import copy
+import os
 
 
 class Buffer:
@@ -168,10 +169,28 @@ class Process:
                     classification = self.classifier(predictions)
                     process_msg = f'{classification} - inference time: %.2f ms' % ((t1-t0) * 1000.0)
 
+                    save_img_thread = Thread(target=self._save_images, args=classification)
+                    save_img_thread.start()
+
                     self.db_job(process_msg)
 
             except IndexError:
                 pass
+
+    def _save_images(self, classe: str):
+        filename = f'{self.current_image_info["profile"]}_' \
+                   f'{self.current_image_info["campaign"]}_' \
+                   f'{self.current_image_info["beam_id"]}_' \
+                   f'WEB00{self.current_image_info["n_images"]}.bmp'
+
+        if classe in ['Seams', 'Hole', 'Souflure']:
+            full_path = os.path.join('D:',
+                                     'Defects',
+                                     self.current_image_info['profile'],
+                                     self.current_image_info['campaign'])
+
+            print(os.path.join(full_path, filename))
+            # cv2.imwrite("image.jpg", filename, [cv2.IMWRITE_JPEG_QUALITY, 90])
 
     def db_insert(self) -> None:
         """ insert the information of a new beam as soon as we scan the first image """

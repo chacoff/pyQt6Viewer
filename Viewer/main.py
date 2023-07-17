@@ -54,7 +54,9 @@ class MainWindow(QMainWindow):
                           Beam INTEGER, 
                           Souflure INTEGER, 
                           Hole INTEGER,
-                          Water INTEGER)''')
+                          Water INTEGER,
+                          Bin INTEGER,
+                          Dataset INTEGER)''')
 
         # Model name
         self.model_name = QLabel('Model: *.onnx')
@@ -63,6 +65,8 @@ class MainWindow(QMainWindow):
         self.inference_time = QLabel('Inference time: 0.00 ms')
         self.inference_time.setStyleSheet('''QLabel {font-size: 18px; font-weight: bold; color: #FF8040;}''')
 
+        self.image_number_title = QLabel('0/00000')
+        self.image_number_title.setStyleSheet('''QLabel {font-size: 18px; font-weight: bold; color: #606060;}''')
         self.image_name_title = QLabel('*.bmp')
         self.image_name_title.setStyleSheet('''QLabel {font-size: 18px; font-weight: bold; color: #606060;}''')
 
@@ -83,36 +87,49 @@ class MainWindow(QMainWindow):
         browse_action = QAction("Browse", self)  # QIcon('')
         browse_action.triggered.connect(self.browse_folder)
         browse_action.setShortcut('w')
+        browse_action.setToolTip('(w) - select a folder with images')
         process_action = QAction("Process", self)
         process_action.triggered.connect(self.process_image)
         process_action.setShortcut('p')
+        process_action.setToolTip('(p) - process an images')
         model_action = QAction("Model", self)
         model_action.triggered.connect(self.browse_model)
         model_action.setShortcut('m')
+        model_action.setToolTip('(m) - load a model for classification')
         first_im_action = QAction("<< First Image", self)
         first_im_action.triggered.connect(self.show_first_image)
         previous_action = QAction("< Previous", self)
         previous_action.triggered.connect(self.show_previous_image)
         previous_action.setShortcut('a')
+        previous_action.setToolTip('(a) goes to the previous image')
         center_image_action = QAction('Reset Zoom', self)
         center_image_action.triggered.connect(self.panel_view.setImageinCenter)
         center_image_action.setShortcut('c')
+        center_image_action.setToolTip('(c) center the image and fullfill the available space')
         next_action = QAction("Next >", self)
         next_action.triggered.connect(self.show_next_image)
         next_action.setShortcut('d')
+        next_action.setToolTip('(d) goes to the next image')
         last_im_action = QAction("Last Image >>", self)
         last_im_action.triggered.connect(self.show_last_image)
         reset_brightness = QAction('Reset Brightness', self)
         reset_brightness.triggered.connect(self.reset_brightness)
         reset_brightness.setShortcut('b')
-        model_is_ok = QAction(QIcon('includes/da_32.png'), 'Yes', self)
+        reset_brightness.setToolTip('(b) reset the brightness of the image to its original level')
+        model_is_ok = QAction(QIcon('includes/da_32.png'), '(o) Yes', self)
         model_is_ok.triggered.connect(self.model_is_ok)
         model_is_ok.setShortcut('o')
-        model_is_not_ok = QAction(QIcon('includes/net_32.png'), 'No', self)
+        model_is_not_ok = QAction(QIcon('includes/net_32.png'), '(n) No', self)
         model_is_not_ok.triggered.connect(self.model_is_not_ok)
         model_is_not_ok.setShortcut('n')
-        open_matrix = QAction(QIcon('includes/matrix_32.png'), 'Open Matrix', self)
+        delete_image = QAction(QIcon('includes/trash_32.png'), '(t) Flag to delete', self)
+        delete_image.triggered.connect(self._delete_image)
+        delete_image.setShortcut('t')
+        open_matrix = QAction(QIcon('includes/matrix_32.png'), 'Build confusion matrix', self)
         open_matrix.triggered.connect(self.open_matrix_image)
+        add_to_dataset = QAction(QIcon('includes/server_32.png'), '(s) Flag to add in dataset', self)
+        add_to_dataset.triggered.connect(self._add_to_dataset)
+        add_to_dataset.setShortcut('s')
         # Loading buttons
         toolbar.addAction(browse_action)
         toolbar.addAction(model_action)
@@ -129,6 +146,8 @@ class MainWindow(QMainWindow):
         # Statistics buttons
         toolbar.addAction(model_is_ok)
         toolbar.addAction(model_is_not_ok)
+        toolbar.addAction(delete_image)
+        toolbar.addAction(add_to_dataset)
         toolbar.addAction(open_matrix)
         toolbar.setStyleSheet('''
             QToolBar {
@@ -189,6 +208,37 @@ class MainWindow(QMainWindow):
             }
         """)
 
+        # Images slider
+        self.images_slider = QSlider(Qt.Orientation.Horizontal)
+        self.images_slider.setMinimum(0)
+        self.images_slider.setMaximum(100)
+        self.images_slider.setSingleStep(1)
+        self.images_slider.valueChanged.connect(self.panel_view.set_brightness)
+        self.images_slider.setValue(0)
+        self.images_slider.setStyleSheet("""
+                    QSlider {
+                        background-color: #D0D0D0;
+                        height: 18px;
+                        margin: 1px;
+                        padding: 1px;
+                    }
+
+                    QSlider::groove:horizontal {
+                        border: none;
+                        background-color: #D0D0D0;
+                        height: 18px;
+                    }
+
+                    QSlider::handle:horizontal {
+                        background-color: #606060;
+                        border: none;
+                        width: 28px;
+                        height: 28px;
+                        margin: -3px 0;
+                        border-radius: 5px;
+                    }
+                """)
+
         # Container with 2 horizontal panels
         layout_2panels = QHBoxLayout()
 
@@ -201,7 +251,10 @@ class MainWindow(QMainWindow):
         # TODO: add the number of the image on top of the image number
         header.addWidget(self.model_name, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
         header.addWidget(self.inference_time, 1, 0, alignment=Qt.AlignmentFlag.AlignLeft)
-        header.addWidget(self.image_name_title, 0, 1, 2, 1, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        header.addWidget(self.image_number_title, 0, 1, alignment=Qt.AlignmentFlag.AlignLeft)
+        header.addWidget(self.image_name_title, 1, 1, alignment=Qt.AlignmentFlag.AlignLeft)
+
         header.addWidget(self.model_prediction_label, 0, 2, alignment=Qt.AlignmentFlag.AlignLeft)
         header.addWidget(self.ground_truth_label, 1, 2, alignment=Qt.AlignmentFlag.AlignLeft)
 
@@ -216,6 +269,7 @@ class MainWindow(QMainWindow):
 
         image_view_layout.addWidget(self.panel_view, 6)
         image_view_layout.addWidget(self.brightness_slider, 1)
+        image_view_layout.addWidget(self.images_slider, 1)
         image_view_layout.addWidget(toolbar, 1)
         image_view_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -317,6 +371,11 @@ class MainWindow(QMainWindow):
         dialog.setLayout(layout)
         dialog.show()
 
+    def _delete_image(self) -> None:
+        self.update_db('Bin', 1)
+
+    def _add_to_dataset(self) -> None:
+        self.update_db('Dataset', 1)
     def set_status_bar(self):
         """ set the status bar with some information about the current image
         sets title in the header about the current image and predictions
@@ -325,6 +384,7 @@ class MainWindow(QMainWindow):
 
         self.current_image_name = QFileInfo(self.filename()).fileName()
         self.image_name_title.setText(self.current_image_name)
+        self.image_number_title.setText(f'{self.current_image_index + 1} of {len(self.image_files)} ')
         self.model_prediction_label.setText('prediction: ')
         self.ground_truth_label.setText('ground truth: ')
 
