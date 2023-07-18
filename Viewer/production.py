@@ -121,6 +121,7 @@ class Process:
         self._load_model(str(params.get_value('Model', 'model_path')),
                          str(params.get_value('Model', 'device')))
         self.classes: list = params.get_value('Model', 'output_classes').split(',')
+        self.interest_profiles: list = params.get_value('Production', 'profile_of_interest').split(',')
         self.not_interest_profiles: list = params.get_value('Production', 'profile_not_of_interest').split(',')
         self.inference = YoloV5OnnxSeams()
 
@@ -169,10 +170,11 @@ class Process:
                     classification = self.classifier(predictions)
                     process_msg = f'{classification} - inference time: %.2f ms' % ((t1-t0) * 1000.0)
 
-                    save_img_thread = Thread(target=self._save_images, args=classification)
-                    save_img_thread.start()
-
                     self.db_job(process_msg)
+
+                    # if self.current_image_info['profile'] in self.interest_profiles:
+                    save_img_thread = Thread(target=self._save_images, args=(classification,))
+                    save_img_thread.start()
 
             except IndexError:
                 pass
@@ -184,10 +186,11 @@ class Process:
                    f'WEB00{self.current_image_info["n_images"]}.bmp'
 
         if classe in ['Seams', 'Hole', 'Souflure']:
-            full_path = os.path.join('D:',
+            full_path = os.path.join('D:\\',
                                      'Defects',
                                      self.current_image_info['profile'],
-                                     self.current_image_info['campaign'])
+                                     self.current_image_info['campaign'],
+                                     classe)
 
             print(os.path.join(full_path, filename))
             # cv2.imwrite("image.jpg", filename, [cv2.IMWRITE_JPEG_QUALITY, 90])
