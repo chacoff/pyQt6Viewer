@@ -173,13 +173,13 @@ class Process:
                     self.db_job(process_msg)
 
                     # if self.current_image_info['profile'] in self.interest_profiles:
-                    save_img_thread = Thread(target=self._save_images, args=(classification,))
+                    save_img_thread = Thread(target=self._save_images, args=(classification, mat_image,))
                     save_img_thread.start()
 
             except IndexError:
                 pass
 
-    def _save_images(self, classe: str):
+    def _save_images(self, classe: str, image: any):
         filename = f'{self.current_image_info["profile"]}_' \
                    f'{self.current_image_info["campaign"]}_' \
                    f'{self.current_image_info["beam_id"]}_' \
@@ -191,9 +191,11 @@ class Process:
                                      self.current_image_info['profile'],
                                      self.current_image_info['campaign'],
                                      classe)
+            if not os.path.exists(full_path):
+                os.makedirs(full_path)
 
-            print(os.path.join(full_path, filename))
-            # cv2.imwrite("image.jpg", filename, [cv2.IMWRITE_JPEG_QUALITY, 90])
+            full_name = os.path.join(full_path, filename)
+            cv2.imwrite(full_name, image, [cv2.IMWRITE_JPEG_QUALITY, 90])
 
     def db_insert(self) -> None:
         """ insert the information of a new beam as soon as we scan the first image """
