@@ -210,11 +210,10 @@ class MainWindow(QMainWindow):
 
         # Images slider
         self.images_slider = QSlider(Qt.Orientation.Horizontal)
-        self.images_slider.setMinimum(0)
-        self.images_slider.setMaximum(1)
+        self.images_slider.setMinimum(1)
         self.images_slider.setSingleStep(1)
         self.images_slider.valueChanged.connect(self.image_slider_handler)
-        self.images_slider.setValue(0)
+        self.images_slider.setValue(1)
         self.images_slider.setStyleSheet("""
                     QSlider {
                         background-color: #D0D0D0;
@@ -274,7 +273,7 @@ class MainWindow(QMainWindow):
         self.bright_label = QLabel('0 %')
         self.bright_label.setStyleSheet('''QLabel {font-size: 12px; font-weight: bold; color: #606060;}''')
         self.bright_label.setFixedSize(80, 20)
-        self.bright_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.bright_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         bright_block.addWidget(self.bright_label, 0)
         b_block = QWidget()
         b_block.setLayout(bright_block)
@@ -285,7 +284,7 @@ class MainWindow(QMainWindow):
         self.imag_label = QLabel('0/0')
         self.imag_label.setStyleSheet('''QLabel {font-size: 12px; font-weight: bold; color: #606060;}''')
         self.imag_label.setFixedSize(80, 20)
-        self.imag_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.imag_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         image_block.addWidget(self.imag_label, 0)
         i_block = QWidget()
         i_block.setLayout(image_block)
@@ -606,7 +605,7 @@ class MainWindow(QMainWindow):
             self.error_box('Folder Path', 'Please load a folder with images in BMP or PNG')
             return
 
-        if value < len(self.image_files) - 1:
+        if value <= len(self.image_files)-1:
             self.current_image_index = value
             self.panel_view.display_image(self.filename())
             self.update_inference_time(0.0)
