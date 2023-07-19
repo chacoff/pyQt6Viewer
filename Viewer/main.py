@@ -299,7 +299,6 @@ class MainWindow(QMainWindow):
         w_slider = QWidget()
         w_slider.setLayout(image_view_layout)
 
-        # TODO: a second slider to move faster between images
         layout_2panels.addWidget(w_slider, 5)
         layout_2panels.addWidget(self.panel_info, 1)
 
