@@ -182,7 +182,7 @@ class MainWindow(QMainWindow):
         self.brightness_slider.setMinimum(-100)
         self.brightness_slider.setMaximum(100)
         self.brightness_slider.setSingleStep(2)
-        self.brightness_slider.valueChanged.connect(self.panel_view.set_brightness)
+        self.brightness_slider.valueChanged.connect(self.brightness_slider_handler)  # self.panel_view.set_brightness
         self.brightness_slider.setValue(0)
         self.brightness_slider.setStyleSheet("""
             QSlider {
@@ -211,9 +211,9 @@ class MainWindow(QMainWindow):
         # Images slider
         self.images_slider = QSlider(Qt.Orientation.Horizontal)
         self.images_slider.setMinimum(0)
-        self.images_slider.setMaximum(100)
+        self.images_slider.setMaximum(1)
         self.images_slider.setSingleStep(1)
-        # self.images_slider.valueChanged.connect(self.panel_view.set_brightness)
+        self.images_slider.valueChanged.connect(self.image_slider_handler)
         self.images_slider.setValue(0)
         self.images_slider.setStyleSheet("""
                     QSlider {
@@ -248,7 +248,6 @@ class MainWindow(QMainWindow):
         header = QGridLayout()
 
         # header
-        # TODO: add the number of the image on top of the image number
         header.addWidget(self.model_name, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
         header.addWidget(self.inference_time, 1, 0, alignment=Qt.AlignmentFlag.AlignLeft)
 
@@ -268,8 +267,32 @@ class MainWindow(QMainWindow):
         image_view_layout = QVBoxLayout()
 
         image_view_layout.addWidget(self.panel_view, 6)
-        image_view_layout.addWidget(self.brightness_slider, 1)
-        image_view_layout.addWidget(self.images_slider, 1)
+
+        bright_block = QHBoxLayout()
+        bright_block.setContentsMargins(0, 0, 0, 0)  # Set margins to zero
+        bright_block.addWidget(self.brightness_slider, 6)
+        self.bright_label = QLabel('0 %')
+        self.bright_label.setStyleSheet('''QLabel {font-size: 12px; font-weight: bold; color: #606060;}''')
+        self.bright_label.setFixedSize(80, 20)
+        self.bright_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        bright_block.addWidget(self.bright_label, 0)
+        b_block = QWidget()
+        b_block.setLayout(bright_block)
+
+        image_block = QHBoxLayout()
+        image_block.setContentsMargins(0, 0, 0, 0)  # Set margins to zero
+        image_block.addWidget(self.images_slider, 6)
+        self.imag_label = QLabel('0/0')
+        self.imag_label.setStyleSheet('''QLabel {font-size: 12px; font-weight: bold; color: #606060;}''')
+        self.imag_label.setFixedSize(80, 20)
+        self.imag_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        image_block.addWidget(self.imag_label, 0)
+        i_block = QWidget()
+        i_block.setLayout(image_block)
+
+        image_view_layout.addWidget(b_block, 0)  # self.brightness_slider
+        image_view_layout.addWidget(i_block, 0)  # self.images_slider
+
         image_view_layout.addWidget(toolbar, 1)
         image_view_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -376,6 +399,7 @@ class MainWindow(QMainWindow):
 
     def _add_to_dataset(self) -> None:
         self.update_db('Dataset', 1)
+
     def set_status_bar(self):
         """ set the status bar with some information about the current image
         sets title in the header about the current image and predictions
@@ -392,6 +416,8 @@ class MainWindow(QMainWindow):
                   f'{self.current_image_name} - ' \
                   f'{self.panel_view.channel}x{self.panel_view.height}x{self.panel_view.width} in ' \
                   f'{self.folder_path}'
+
+        self.imag_label.setText(f'{self.current_image_index + 1}/{len(self.image_files)}')
         self.statusBar().showMessage(message)
 
     def browse_folder(self):
@@ -413,21 +439,21 @@ class MainWindow(QMainWindow):
 
         if self.image_files:
             self.panel_view.display_image(self.filename())
+            self.images_slider.setMaximum(len(self.image_files))
+            self.bright_label.setText(f'0 %')
+            self.brightness_slider.setValue(0)
             self.set_status_bar()
 
-    def browse_model(self) -> None:
+    def browse_model(self):
         default = self.default_model
+        cancel_proof = self.model_path
 
-        if self.alex:
-            model_path = os.path.join(default, 'best_exp2_Small_v2_768_5c.onnx')
-            self.model_path = model_path
-            model_name = model_path.split('\\')[-1]
-        else:
-            model_path = QFileDialog.getOpenFileName(self, 'Choose Onnx Model', default, 'Onnx files (*.onnx)')
-            self.model_path = model_path[0]
-            model_name = QFileInfo(model_path[0]).fileName()
+        _model_path = QFileDialog.getOpenFileName(self, 'Choose Onnx Model', default, 'Onnx files (*.onnx)')
+        self.model_path = _model_path[0]
+        model_name = QFileInfo(_model_path[0]).fileName()
 
-        if not model_path:
+        if self.model_path == '':
+            self.model_path = cancel_proof
             return
 
         self.update_model_name(f'Model: {model_name}')
@@ -570,11 +596,29 @@ class MainWindow(QMainWindow):
             self.model_prediction_label.setText(f'prediction: Seams')
             self.update_db('Predict', 'Seams')
 
+    def brightness_slider_handler(self, value):
+        self.bright_label.setText(f'{value} %')
+        self.panel_view.set_brightness(value)
+
+    def image_slider_handler(self, value):
+        """ move fast between images inside of a folder """
+
+        if not self.folder_path:
+            self.error_box('Folder Path', 'Please load a folder with images in BMP or PNG')
+            return
+
+        if value < len(self.image_files) - 1:
+            self.current_image_index = value
+            self.panel_view.display_image(self.filename())
+            self.update_inference_time(0.0)
+            self.set_status_bar()
+
     def show_previous_image(self):
         if self.current_image_index > 0:
             self.current_image_index -= 1
             self.panel_view.display_image(self.filename())
             self.update_inference_time(0.0)
+            self.images_slider.setValue(self.current_image_index)
             self.set_status_bar()
 
     def show_next_image(self):
@@ -582,6 +626,7 @@ class MainWindow(QMainWindow):
             self.current_image_index += 1
             self.panel_view.display_image(self.filename())
             self.update_inference_time(0.0)
+            self.images_slider.setValue(self.current_image_index)
             self.set_status_bar()
 
     def show_first_image(self):
@@ -592,6 +637,7 @@ class MainWindow(QMainWindow):
         self.current_image_index = 0
         self.panel_view.display_image(self.filename())
         self.update_inference_time(0.0)
+        self.images_slider.setValue(self.current_image_index)
         self.set_status_bar()
 
     def show_last_image(self):
@@ -602,6 +648,7 @@ class MainWindow(QMainWindow):
         self.current_image_index = len(self.image_files) - 1
         self.panel_view.display_image(self.filename())
         self.update_inference_time(0.0)
+        self.images_slider.setValue(self.current_image_index)
         self.set_status_bar()
 
     def reset_brightness(self):
@@ -609,6 +656,7 @@ class MainWindow(QMainWindow):
         if self.folder_path is None:
             return
 
+        self.bright_label.setText('0/0')
         self.brightness_slider.setValue(0)
         self.panel_view.set_brightness(0)
 

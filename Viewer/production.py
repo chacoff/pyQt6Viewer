@@ -195,7 +195,7 @@ class Process:
                 os.makedirs(full_path)
 
             full_name = os.path.join(full_path, filename)
-            cv2.imwrite(full_name, image, [cv2.IMWRITE_JPEG_QUALITY, 90])
+            cv2.imwrite(full_name, image, [cv2.IMWRITE_PNG_COMPRESSION, 90])
 
     def db_insert(self) -> None:
         """ insert the information of a new beam as soon as we scan the first image """
