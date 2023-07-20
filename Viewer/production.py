@@ -13,6 +13,7 @@ import pyodbc
 from datetime import datetime
 import copy
 import os
+import ast
 
 
 class Buffer:
@@ -113,17 +114,21 @@ class TCP:
 
 
 class Process:
-    def __init__(self, buff, params):
+    def __init__(self, buff, buff_images, params):
         self._buffer = buff
+        self._buffer_images = buff_images
         self._thread = Thread(target=self.run)
         self.header_size: int = int(params.get_value('TcpSocket', 'header_size'))
         self._model: any = None
         self._load_model(str(params.get_value('Model', 'model_path')),
                          str(params.get_value('Model', 'device')))
         self.classes: list = params.get_value('Model', 'output_classes').split(',')
+        self.classes_to_save: list = params.get_value('Model', 'classes_to_save').split(',')
         self.interest_profiles: list = params.get_value('Production', 'profile_of_interest').split(',')
         self.not_interest_profiles: list = params.get_value('Production', 'profile_not_of_interest').split(',')
         self.inference = YoloV5OnnxSeams()
+        self.base_saving_folder: str = str(params.get_value('Production', 'saving_folder'))
+        self.save_all_images = ast.literal_eval(params.get_value('Production', 'save_all_images'))
 
         # current info
         self.current_image_info: Dict[str, Union[str, str, str, int, str, int, int, int]] = {
@@ -143,7 +148,7 @@ class Process:
                            'SERVER=AZR-SQL-MIAUT;' \
                            'DATABASE=SEAMS_DETECTIONS;' \
                            'UID=SEAMS-DETECT_Publisher;' \
-                           'PWD=AMseams2023q2'
+                           'PWD=AMseams2023Q3'
 
         self.conn = pyodbc.connect(self.conn_string)
 
@@ -157,7 +162,7 @@ class Process:
             try:
                 data = self._buffer.dequeue()
 
-                mat_image = self.decode_payload(data, self.header_size, debug=False)
+                mat_image, mat_org = self.decode_payload(data, self.header_size, debug=False)
 
                 if str(self.current_image_info['profile']) in self.not_interest_profiles:
                     print('%s: Profile of no interest' % self.current_image_info['profile'])
@@ -172,30 +177,21 @@ class Process:
 
                     self.db_job(process_msg)
 
-                    # if self.current_image_info['profile'] in self.interest_profiles:
-                    save_img_thread = Thread(target=self._save_images, args=(classification, mat_image,))
-                    save_img_thread.start()
+                    payload = [mat_org,
+                               classification,
+                               self.current_image_info["profile"],
+                               self.current_image_info["campaign"],
+                               self.current_image_info["beam_id"],
+                               self.current_image_info["n_images"]]
+
+                    if self.save_all_images:
+                        self.classes_to_save.append('Beam')
+
+                    if self.current_image_info['profile'] in self.interest_profiles and classification in self.classes_to_save:
+                        self._buffer_images.queue(payload)
 
             except IndexError:
                 pass
-
-    def _save_images(self, classe: str, image: any):
-        filename = f'{self.current_image_info["profile"]}_' \
-                   f'{self.current_image_info["campaign"]}_' \
-                   f'{self.current_image_info["beam_id"]}_' \
-                   f'WEB00{self.current_image_info["n_images"]}.bmp'
-
-        if classe in ['Seams', 'Hole', 'Souflure']:
-            full_path = os.path.join('D:\\',
-                                     'Defects',
-                                     self.current_image_info['profile'],
-                                     self.current_image_info['campaign'],
-                                     classe)
-            if not os.path.exists(full_path):
-                os.makedirs(full_path)
-
-            full_name = os.path.join(full_path, filename)
-            cv2.imwrite(full_name, image, [cv2.IMWRITE_PNG_COMPRESSION, 90])
 
     def db_insert(self) -> None:
         """ insert the information of a new beam as soon as we scan the first image """
@@ -320,13 +316,13 @@ class Process:
         self.current_image_info['n_images'] += 1
         return 'Beam'
 
-    def decode_payload(self, item: bytes, header_size: int, debug: bool = False) -> np.array:
+    def decode_payload(self, item: bytes, header_size: int, debug: bool = False) -> any:
         """
         Decode the incoming message from bytes
             :param item: the payload in bytes
             :param header_size: typically is 38 and looks like this: ZH026_3260_154200_TX39406066_4096_3000
             :param debug: bool to write or not an image
-            :return: a numpy array (image)
+            :return: a numpy array 3d (Mat image) for inference and the original image in 1d
         """
         full_msg = b''
         full_msg += item
@@ -350,12 +346,11 @@ class Process:
             nparr = np.frombuffer(image_received, np.uint8)
             img_np = nparr.reshape((height, width, depth)).astype('uint8')  # 2-d numpy array\n",
 
-            if depth == 1:
-                img_np = cv2.merge((img_np, img_np, img_np))
+            img_np_3d = cv2.merge((img_np, img_np, img_np)) if depth == 1 else img_np
 
             if debug:
-                cv2.putText(img_np, name, (12, 60), cv2.FONT_HERSHEY_COMPLEX, 1, (5, 7, 255), 2)
-                cv2.imwrite(f'{name}.bmp', img_np)
+                cv2.putText(img_np_3d, name, (12, 60), cv2.FONT_HERSHEY_COMPLEX, 1, (5, 7, 255), 2)
+                cv2.imwrite(f'{name}.bmp', img_np_3d)
 
             self.current_image_info['name'] = name
             self.current_image_info['profile'] = profile
@@ -363,7 +358,7 @@ class Process:
             self.current_image_info['beam_id'] = beam_id
             self.current_image_info['position'] = position
 
-            return img_np
+            return img_np_3d, img_np
         else:
             print(f'problems with length = {len(full_msg)} - {header_size} == {body_size}:')
             return
@@ -390,19 +385,57 @@ class Process:
             return
 
 
+class SavingImages:
+    def __init__(self, buff_img, params):
+        self._buffer_image = buff_img
+        self._thread = Thread(target=self.run)
+        self.base_saving_folder: str = str(params.get_value('Production', 'saving_folder'))
+
+    def start(self):
+        self._thread.start()
+
+    def run(self):
+        while True:
+            try:
+                data = self._buffer_image.dequeue()
+                mat, classe, profile, campaign, beam_id, n_images = data
+
+                filename = f'{profile}_' \
+                           f'{campaign}_' \
+                           f'{beam_id}_' \
+                           f'WEB00{n_images}.jpg'
+
+                full_path = os.path.join(self.base_saving_folder,
+                                         profile,
+                                         campaign,
+                                         classe)
+
+                if not os.path.exists(full_path):
+                    os.makedirs(full_path)
+
+                full_name = os.path.join(full_path, filename)
+                cv2.imwrite(full_name, mat, [cv2.IMWRITE_JPEG_QUALITY, 90])
+            except IndexError:
+                pass
+
+
 def main():
     config = XMLConfig('./src/production_config.xml')
+
     buffer = Buffer()
+    buffer_images = Buffer()
+
     server = TCP(buffer, config)
-    process = Process(buffer, config)
+    process = Process(buffer, buffer_images, config)
+    saving = SavingImages(buffer_images, config)
 
     server.start()
     process.start()
+    saving.start()
 
 
 if __name__ == '__main__':
 
     main()
-    sys.ps1 = 'H-engine v1'
     sys.exit(0)
 

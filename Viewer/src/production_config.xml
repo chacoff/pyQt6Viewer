@@ -2,7 +2,7 @@
     <TcpSocket>
         <ip_to_listen>127.0.0.1</ip_to_listen>
         <port_to_listen>1302</port_to_listen>
-        <buffer_size>2228264</buffer_size> <!-- 2228264 or 36864040-->
+        <buffer_size>12288040</buffer_size> <!-- 12288040 2228264 or 36864040-->
         <header_size>40</header_size>
     </TcpSocket>
     <Viewer>
@@ -12,10 +12,12 @@
     <Model>
         <model_path>./src/best_exp2_Small_v2_768_5c.onnx</model_path>
         <output_classes>Seams,Beam,Souflure,Hole,Water</output_classes>
+        <classes_to_save>Seams,Hole,Souflure</classes_to_save>
         <device>cpu</device>
     </Model>
     <Production>
-        <saving_folder>D:/Defects/</saving_folder>
+        <saving_folder>D:\\Defects</saving_folder>
+        <save_all_images>False</save_all_images>
         <profile_of_interest>ZH018,ZH020,ZH022,ZH024,ZH026,ZH028,ZH030,ZI120,ZI270,ZI450,ZI500,ZI550,ZW10A,ZW12A,ZW14A,ZW16A,ZW128,ZW148,ZW187,ZW218</profile_of_interest>
         <profile_not_of_interest>X,ZB,ZE,ZH010,ZH012,ZH014,ZH016,ZI140,ZI160,ZI180,ZI200,ZI220,ZI240,ZI270,ZI300,ZI330,ZI360,ZI400,ZW0,ZW104,ZW105,ZW108,ZW124,ZW126,ZW145,ZW146,ZW165,ZW167,ZW186</profile_not_of_interest>
     </Production>
