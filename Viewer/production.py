@@ -14,6 +14,7 @@ from datetime import datetime
 import copy
 import os
 import ast
+import time
 
 
 class Buffer:
@@ -31,10 +32,7 @@ class Buffer:
 
     def dequeue(self) -> any:
         with self._mutex:
-            if self._buffer:
-                return self._buffer.popleft()
-            else:
-                raise IndexError('Buffer is empty. Cannot dequeue')
+            return self._buffer.popleft()
 
     def is_empty(self) -> bool:
         return len(self._buffer) == 0
@@ -191,7 +189,8 @@ class Process:
                         self._buffer_images.queue(payload)
 
             except IndexError:
-                pass
+                # no data to process
+                time.sleep(0.100)
 
     def db_insert(self) -> None:
         """ insert the information of a new beam as soon as we scan the first image """
@@ -416,7 +415,8 @@ class SavingImages:
                 full_name = os.path.join(full_path, filename)
                 cv2.imwrite(full_name, mat)
             except IndexError:
-                pass
+                # nothing to save
+                time.sleep(0.100)
 
 
 def main():
