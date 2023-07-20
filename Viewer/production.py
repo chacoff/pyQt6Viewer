@@ -35,7 +35,8 @@ class Buffer:
             return self._buffer.popleft()
 
     def is_empty(self) -> bool:
-        return len(self._buffer) == 0
+        with self._mutex:
+            return len(self._buffer) == 0
 
 
 class TCP:
