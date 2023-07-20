@@ -181,10 +181,12 @@ class Process:
                                self.current_image_info["profile"],
                                self.current_image_info["campaign"],
                                self.current_image_info["beam_id"],
-                               self.current_image_info["n_images"]]
+                               self.current_image_info["n_images"],
+                               False]  # flag to save in low quality
 
                     if self.save_all_images:
-                        self.classes_to_save.append('Beam')
+                        payload[6] = True  # flag to save in low quality
+                        self.classes_to_save.append('Beam')  # it also saves now Beam only images
 
                     if self.current_image_info['profile'] in self.interest_profiles and classification in self.classes_to_save:
                         self._buffer_images.queue(payload)
@@ -398,12 +400,12 @@ class SavingImages:
         while True:
             try:
                 data = self._buffer_image.dequeue()
-                mat, classe, profile, campaign, beam_id, n_images = data
+                mat, classe, profile, campaign, beam_id, n_images, image_quality = data
 
                 filename = f'{profile}_' \
-                           f'{campaign}_' \
-                           f'{beam_id}_' \
-                           f'WEB00{n_images}.bmp'
+                            f'{campaign}_' \
+                            f'{beam_id}_' \
+                            f'WEB00{n_images}.bmp'
 
                 full_path = os.path.join(self.base_saving_folder,
                                          profile,
@@ -414,7 +416,11 @@ class SavingImages:
                     os.makedirs(full_path)
 
                 full_name = os.path.join(full_path, filename)
-                cv2.imwrite(full_name, mat)
+                if not image_quality:
+                    cv2.imwrite(full_name, mat)
+                else:
+                    cv2.imwrite(full_name, mat, [cv2.IMWRITE_JPEG_QUALITY, 20])
+
             except IndexError:
                 # nothing to save
                 time.sleep(0.100)
