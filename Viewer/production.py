@@ -403,7 +403,7 @@ class SavingImages:
                 filename = f'{profile}_' \
                            f'{campaign}_' \
                            f'{beam_id}_' \
-                           f'WEB00{n_images}.jpg'
+                           f'WEB00{n_images}.bmp'
 
                 full_path = os.path.join(self.base_saving_folder,
                                          profile,
@@ -414,7 +414,7 @@ class SavingImages:
                     os.makedirs(full_path)
 
                 full_name = os.path.join(full_path, filename)
-                cv2.imwrite(full_name, mat, [cv2.IMWRITE_JPEG_QUALITY, 90])
+                cv2.imwrite(full_name, mat)
             except IndexError:
                 pass
 
