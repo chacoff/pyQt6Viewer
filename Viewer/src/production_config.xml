@@ -18,7 +18,7 @@
     <Production>
         <saving_folder>D:\\Defects</saving_folder>
         <save_all_images>False</save_all_images>
-        <profile_of_interest>ZH018,ZH020,ZH022,ZH024,ZH026,ZH028,ZH030,ZI120,ZI270,ZI450,ZI500,ZI550,ZW10A,ZW12A,ZW14A,ZW16A,ZW128,ZW148,ZW187,ZW218</profile_of_interest>
+        <profile_of_interest>00000,ZH018,ZH020,ZH022,ZH024,ZH026,ZH028,ZH030,ZI120,ZI270,ZI450,ZI500,ZI550,ZW10A,ZW12A,ZW14A,ZW16A,ZW128,ZW148,ZW187,ZW218</profile_of_interest>
         <profile_not_of_interest>X,ZB,ZE,ZH010,ZH012,ZH014,ZH016,ZI140,ZI160,ZI180,ZI200,ZI220,ZI240,ZI270,ZI300,ZI330,ZI360,ZI400,ZW0,ZW104,ZW105,ZW108,ZW124,ZW126,ZW145,ZW146,ZW165,ZW167,ZW186</profile_not_of_interest>
     </Production>
     <Classes>

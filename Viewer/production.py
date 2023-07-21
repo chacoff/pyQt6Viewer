@@ -174,7 +174,8 @@ class Process:
                     classification = self.classifier(predictions)
                     process_msg = f'{classification} - inference time: %.2f ms' % ((t1-t0) * 1000.0)
 
-                    self.db_job(process_msg)
+                    if self.current_image_info["profile"] != '00000':
+                        self.db_job(process_msg)
 
                     payload = [mat_org,
                                classification,
@@ -420,7 +421,7 @@ class SavingImages:
                     cv2.imwrite(full_name, mat)
                 else:
                     cv2.imwrite(full_name, mat, [cv2.IMWRITE_JPEG_QUALITY, 20])
-
+                time.sleep(0.010)
             except IndexError:
                 # nothing to save
                 time.sleep(0.100)
