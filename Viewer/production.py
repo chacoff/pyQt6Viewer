@@ -175,7 +175,7 @@ class Process:
                     process_msg = f'{classification} - inference time: %.2f ms' % ((t1-t0) * 1000.0)
 
                     if self.current_image_info["profile"] != '00000':
-                        self.db_job(process_msg)
+                        self.db_job(process_msg)  # skip database inserting if there is no MES information
 
                     payload = [mat_org,
                                classification,
@@ -403,10 +403,17 @@ class SavingImages:
                 data = self._buffer_image.dequeue()
                 mat, classe, profile, campaign, beam_id, n_images, image_quality = data
 
-                filename = f'{profile}_' \
-                            f'{campaign}_' \
-                            f'{beam_id}_' \
-                            f'WEB00{n_images}.bmp'
+                if profile == '00000':
+                    _time = datetime.now()
+                    filename = f'{profile}_' \
+                               f'{campaign}_' \
+                               f'{beam_id}_' \
+                               f'{_time.strftime("%Y_%m_%d_%H%M%S")}.bmp'
+                else:
+                    filename = f'{profile}_' \
+                                f'{campaign}_' \
+                                f'{beam_id}_' \
+                                f'WEB00{n_images}.bmp'
 
                 full_path = os.path.join(self.base_saving_folder,
                                          profile,
