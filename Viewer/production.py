@@ -403,7 +403,7 @@ class SavingImages:
                 data = self._buffer_image.dequeue()
                 mat, classe, profile, campaign, beam_id, n_images, image_quality = data
 
-                if profile == '00000':
+                if profile == '00000':  # it means no MES information
                     _time = datetime.now()
                     filename = f'{profile}_' \
                                f'{campaign}_' \
