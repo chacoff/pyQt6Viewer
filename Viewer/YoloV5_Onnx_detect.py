@@ -12,13 +12,6 @@ class YoloV5OnnxSeams:
 
     def __init__(self):
         super().__init__()
-        # @TODO unused for the moment since all these are hardcode
-        self.input_width = 768
-        self.input_height = 768
-        self.score_threshold = 0.20
-        self.nms_threshold = 0.20
-        self.confidence_threshold = 0.20
-
         self.drawing = False
         self.device = 'cpu'  # possibility of gpu
         self.weight = None
@@ -26,16 +19,23 @@ class YoloV5OnnxSeams:
         self.output_image = None
         self.preds = None
 
-    def process_image(self, classes, weight, input_image):
-        """ input_image is a CV Mat image
-        preds are an object with all predictions containing
-        bbox, class_name, confidence and instance id
+    def process_image(self, classes: any, weight: any, input_image: any, conf: float, iou: float):
+
         """
+        :param classes: a list with all the classes
+        :param weight: a reference of the model since is loaded at the very beginning while starting the app
+        :param input_image: a MAT image
+        :param conf: confidence threshold for inference
+        :param iou: iou threshold for NMS
+        :return: predictions preds contaning bbox, class_name, confidence and instance id
+        """
+
         model = Yolov5Onnx(classes=classes,
                            backend="onnx",
                            weight=weight,
                            device=self.device,
-                           auto_install=False)
+                           conf=conf,
+                           iou=iou)
 
         self.preds = model(input_image)
 

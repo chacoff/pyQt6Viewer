@@ -29,7 +29,7 @@ class Yolov5(IModel):
     with/without batch axis.
     """
 
-    def __init__(self, weight, device: str = 'auto') -> None:
+    def __init__(self, weight, device: str = 'auto', conf: float = 0.20, iou: float = 0.20,) -> None:
         """Initiate Model
 
         Args:
@@ -43,6 +43,8 @@ class Yolov5(IModel):
         """
         self._model = weight  # None
         self._device = device
+        self._thres_conf = conf
+        self._thres_iou = iou
 
         # self._load_model(weight)
 
@@ -80,7 +82,7 @@ class Yolov5(IModel):
         """
         outputs = self._model.run([self._model.get_outputs()[0].name],
                                   {self._model.get_inputs()[0].name: inputs})
-        return self._postprocess(outputs, conf_thres=0.2, iou_thres=0.2)[0]
+        return self._postprocess(outputs, conf_thres=self._thres_conf, iou_thres=self._thres_iou)[0]
 
     def __repr__(self) -> str:
         """Returns Model Information

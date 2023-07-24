@@ -21,6 +21,9 @@ from src.production_config import XMLConfig
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        # Config
+        config = XMLConfig('./src/production_config.xml')
+
         self.image_files = []
         self.current_image_name = '0000.bmp'
         self.current_image_index = 0
@@ -28,17 +31,15 @@ class MainWindow(QMainWindow):
         self._model = None
         self.model_path = None
         self.net = None
+        self.classes_names_raw = config.get_classes_colors_thres()
         self.classes = []
         self.classes_color = []
         self.classes_thre = []
         self.counters = [0]  # counter for the instances of defect detection
-        self.alex = False  # fast mode for desperators
         self.matrix_dict = {}
         self.matrix_csv = self.unique_file('matrix/current_matrix_1.csv')
         self.matrix_img = self.unique_file('matrix/confusion_matrix_1.png')
 
-        # Config
-        config = XMLConfig('./src/production_config.xml')
         self.default_folder = str(config.get_value('Viewer', 'default_dataset'))
         self.default_model = str(config.get_value('Viewer', 'default_model'))
 
@@ -421,10 +422,7 @@ class MainWindow(QMainWindow):
     def browse_folder(self):
         default = self.default_folder
 
-        if self.alex:
-            self.folder_path = default
-        else:
-            self.folder_path = QFileDialog.getExistingDirectory(self, "Choose Folder", default)
+        self.folder_path = QFileDialog.getExistingDirectory(self, "Choose Folder", default)
 
         if not self.folder_path:
             return
@@ -455,7 +453,7 @@ class MainWindow(QMainWindow):
             return
 
         self.update_model_name(f'Model: {model_name}')
-        self.read_classes_file()
+        self.read_classes_colors_thresholds()
         # load model in memory immediately
         self._load_model(self.model_path, 'cpu')
 
@@ -470,25 +468,14 @@ class MainWindow(QMainWindow):
             self._model = onnxruntime.InferenceSession(weight, providers=['CUDAExecutionProvider'])
             return
 
-    def read_classes_file(self) -> None:
-        """ classes.names contains also color and threshold """
-        classes_names_raw = []
-        with open('src\\classes.names', 'rt') as file:
-            lines = file.readlines()
-            for line in lines:
-                name, color, thre = line.strip().split(',')
-                color = color.split(';')
-                r, g, b = map(int, color)
-                classes_names_raw.append((name, QColor(r, g, b), thre))
+    def read_classes_colors_thresholds(self) -> None:
 
-            # @jaime: i am dropping rollprints because there is only 5 classes for the moment
-            classes_names_raw = classes_names_raw[:-1]
-            self.panel_info.update_classes_names_view(classes_names_raw)
+        self.panel_info.update_classes_names_view(self.classes_names_raw)
 
-            for row, (name, color, thre) in enumerate(classes_names_raw):
-                self.classes.append(name)
-                self.classes_color.append(color)
-                self.classes_thre.append(thre)
+        for row, (name, color, thre) in enumerate(self.classes_names_raw):
+            self.classes.append(name)
+            self.classes_color.append(color)
+            self.classes_thre.append(thre)
 
     def process_image(self):
         """ process the image will trigger the statistic counters and will start filling
@@ -509,7 +496,7 @@ class MainWindow(QMainWindow):
 
         # Actual processing >> sending self._model loaded in the memory instead of the string self.model_path
         t0 = timer()
-        self.inference.process_image(self.classes, self._model, frame)
+        self.inference.process_image(self.classes, self._model, frame, conf=0.22, iou=0.15)
         predictions = self.inference.return_predictions()
         t1 = timer()
         self.update_inference_time(t1-t0)

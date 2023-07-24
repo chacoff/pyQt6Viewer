@@ -167,7 +167,7 @@ class Process:
                     print('%s: Profile of no interest' % self.current_image_info['profile'])
                 else:
                     t0 = timer()
-                    self.inference.process_image(self.classes, self._model, mat_image)
+                    self.inference.process_image(self.classes, self._model, mat_image, conf=0.22, iou=0.15)
                     predictions = self.inference.return_predictions()
                     t1 = timer()
 
