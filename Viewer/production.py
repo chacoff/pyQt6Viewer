@@ -403,17 +403,22 @@ class SavingImages:
                 data = self._buffer_image.dequeue()
                 mat, classe, profile, campaign, beam_id, n_images, image_quality = data
 
+                if not image_quality:
+                    extension = 'bmp'
+                else:
+                    extension = 'jpg'
+
                 if profile == '00000':  # it means no MES information
                     _time = datetime.now()
                     filename = f'{profile}_' \
                                f'{campaign}_' \
                                f'{beam_id}_' \
-                               f'{_time.strftime("%Y_%m_%d_%H%M%S")}.bmp'
+                               f'{_time.strftime("%Y_%m_%d_%H%M%S")}.{extension}'
                 else:
                     filename = f'{profile}_' \
                                 f'{campaign}_' \
                                 f'{beam_id}_' \
-                                f'WEB00{n_images}.bmp'
+                                f'WEB00{n_images}.{extension}'
 
                 full_path = os.path.join(self.base_saving_folder,
                                          profile,

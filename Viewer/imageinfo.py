@@ -18,8 +18,8 @@ class ImageInfo(QWidget):
         self.db_name = 'seams_processor.db'
         self.classes_names = []
         self.table = QTableWidget()
-        self.table.setColumnCount(3)
-        self.table.setHorizontalHeaderLabels(['Class', 'Color', 'Threshold'])
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(['Class', 'Color', 'Thres', 'iou'])
         self.table.verticalHeader().setVisible(False)
 
         # detection statistics per instance
@@ -95,7 +95,7 @@ class ImageInfo(QWidget):
         self.classes_names = classes_names
         self.table.setRowCount(len(self.classes_names))
 
-        for row, (name, color, thre) in enumerate(self.classes_names):
+        for row, (name, color, thre, iou) in enumerate(self.classes_names):
             name_item = QTableWidgetItem(name)
             name_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
             self.table.setItem(row, 0, name_item)
@@ -109,6 +109,22 @@ class ImageInfo(QWidget):
             # thre_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
             self.table.setItem(row, 2, thre_item)
 
+            iou_item = QTableWidgetItem(iou)
+            # thre_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
+            self.table.setItem(row, 3, iou_item)
+
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+
+    def get_thres_item(self, column) -> list:
+        """ get threshold from all rows """
+
+        threshold_values = []
+        for row in range(self.table.rowCount()):
+            thre_item = self.table.item(row, column)
+            if thre_item is not None:
+                thre_data = thre_item.text()
+                threshold_values.append(float(thre_data))
+
+        return threshold_values

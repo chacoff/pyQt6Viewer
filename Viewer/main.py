@@ -35,6 +35,7 @@ class MainWindow(QMainWindow):
         self.classes = []
         self.classes_color = []
         self.classes_thre = []
+        self.classes_iou = []
         self.counters = [0]  # counter for the instances of defect detection
         self.matrix_dict = {}
         self.matrix_csv = self.unique_file('matrix/current_matrix_1.csv')
@@ -472,15 +473,22 @@ class MainWindow(QMainWindow):
 
         self.panel_info.update_classes_names_view(self.classes_names_raw)
 
-        for row, (name, color, thre) in enumerate(self.classes_names_raw):
+        for row, (name, color, thre, iou) in enumerate(self.classes_names_raw):
             self.classes.append(name)
             self.classes_color.append(color)
             self.classes_thre.append(thre)
+            self.classes_iou.append(iou)
 
     def process_image(self):
         """ process the image will trigger the statistic counters and will start filling
         the dictionary self.matrix_dict storing all the images already processed
         """
+
+        all_confs = self.panel_info.get_thres_item(2)  # first element is the Seams
+        all_confs = [x / 100 for x in all_confs]
+
+        all_ious = self.panel_info.get_thres_item(3)
+        all_ious = [x / 100 for x in all_ious]
 
         if not self.folder_path:
             self.error_box('Folder Path', 'Please load a folder with images in BMP or PNG')
@@ -496,7 +504,7 @@ class MainWindow(QMainWindow):
 
         # Actual processing >> sending self._model loaded in the memory instead of the string self.model_path
         t0 = timer()
-        self.inference.process_image(self.classes, self._model, frame, conf=0.22, iou=0.15)
+        self.inference.process_image(self.classes, self._model, frame, conf=all_confs[0], iou=all_ious[0])
         predictions = self.inference.return_predictions()
         t1 = timer()
         self.update_inference_time(t1-t0)

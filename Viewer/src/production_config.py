@@ -42,7 +42,8 @@ class XMLConfig:
             confidence = float(class_elem.find('confidence').text)
             color_data = class_elem.find('color').text
             color = QColor(*map(int, color_data.split(';')))
-            class_data.append((class_name, color, f' {confidence * 100:.1f}'))
+            iou = float(class_elem.find('iou').text)
+            class_data.append((class_name, color, f'{confidence * 100:.1f}', f' {iou * 100:.1f}'))
 
         return class_data
 
