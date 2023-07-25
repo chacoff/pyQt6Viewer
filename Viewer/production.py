@@ -393,6 +393,7 @@ class SavingImages:
         self._buffer_image = buff_img
         self._thread = Thread(target=self.run)
         self.base_saving_folder: str = str(params.get_value('Production', 'saving_folder'))
+        self.extension: str = 'jpg'
 
     def start(self):
         self._thread.start()
@@ -401,24 +402,19 @@ class SavingImages:
         while True:
             try:
                 data = self._buffer_image.dequeue()
-                mat, classe, profile, campaign, beam_id, n_images, image_quality = data
-
-                if not image_quality:
-                    extension = 'bmp'
-                else:
-                    extension = 'jpg'
+                mat, classe, profile, campaign, beam_id, n_images, low_quality = data
 
                 if profile == '00000':  # it means no MES information
                     _time = datetime.now()
                     filename = f'{profile}_' \
                                f'{campaign}_' \
                                f'{beam_id}_' \
-                               f'{_time.strftime("%Y_%m_%d_%H%M%S")}.{extension}'
+                               f'{_time.strftime("%Y_%m_%d_%H%M%S")}.{self.extension}'
                 else:
                     filename = f'{profile}_' \
                                 f'{campaign}_' \
                                 f'{beam_id}_' \
-                                f'WEB00{n_images}.{extension}'
+                                f'WEB00{n_images}.{self.extension}'
 
                 full_path = os.path.join(self.base_saving_folder,
                                          profile,
@@ -429,8 +425,8 @@ class SavingImages:
                     os.makedirs(full_path)
 
                 full_name = os.path.join(full_path, filename)
-                if not image_quality:
-                    cv2.imwrite(full_name, mat)
+                if not low_quality:
+                    cv2.imwrite(full_name, mat, [cv2.IMWRITE_JPEG_QUALITY, 95])
                 else:
                     cv2.imwrite(full_name, mat, [cv2.IMWRITE_JPEG_QUALITY, 20])
                 time.sleep(0.010)
