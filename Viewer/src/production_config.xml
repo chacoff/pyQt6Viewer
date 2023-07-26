@@ -23,8 +23,8 @@
     </Production>
     <Classes>
         <Seams>
-            <confidence>0.30</confidence>
-            <iou>0.20</iou>
+            <confidence>0.20</confidence>
+            <iou>0.15</iou>
             <color>30;255;30</color>
         </Seams>
         <Beam>
