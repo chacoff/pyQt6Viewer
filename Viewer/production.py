@@ -187,12 +187,20 @@ class Process:
 
                     if self.save_all_images:
                         payload[6] = True  # flag to save in low quality
-                        self.classes_to_save.append('Beam')  # it also saves now Beam only images
+                        self.classes_to_save.append('Beam')  # it also saves now Beam-only images
 
                     if self.current_image_info['profile'] in self.interest_profiles and classification in self.classes_to_save:
                         self._buffer_images.queue(payload)
 
             except IndexError:
+                # nothing to dequeue is either because the software started or a beam already passed
+                if self.current_image_info['n_images'] != 0:
+                    self.db_update()  # updates database, if n_images is not zero, means a beam already was processed
+                    print(f'>> DB Updated ID_TM_PART: {self.current_image_info.get("beam_id")} -- '
+                          f'n_images: {self.current_image_info.get("n_images")} - '
+                          f'seams: {self.current_image_info.get("Seams")} - '
+                          f'hole: {self.current_image_info.get("Hole")}')
+                    self.current_image_info['n_images'] = 0  # the rest are zeroing before classification of a new beam
                 # no data to process
                 time.sleep(0.100)
 
@@ -276,6 +284,7 @@ class Process:
         return beam_id
 
     def db_job(self, msg: str) -> None:
+        """ it recognizes if a new entry gotta be inserted or if we are still processing the same beam """
 
         if self.current_image_info['beam_id'] == self.last_beam_id:
             print(f'Update ID_TM_PART: {self.current_image_info.get("beam_id")} -- '
@@ -283,7 +292,6 @@ class Process:
                   f'n_images: {self.current_image_info.get("n_images")} - '
                   f'seams: {self.current_image_info.get("Seams")} - '
                   f'hole: {self.current_image_info.get("Hole")}')
-            # self.db_update()
         else:
             self.last_beam_id = self.current_image_info['beam_id']
             print(f'>> Insert ID_TM_PART: {self.current_image_info.get("beam_id")} -- '
@@ -297,8 +305,6 @@ class Process:
         """ classify the image to one single class and update counters """
 
         if self.current_image_info['beam_id'] != self.last_beam_id:
-            if self.current_image_info['n_images'] != 0:
-                self.db_update()  # once before resetting the counters and if n_images = 0 it means is the first beam
             self.current_image_info['n_images'] = 0
             self.current_image_info['Seams'] = 0
             self.current_image_info['Hole'] = 0
@@ -321,7 +327,7 @@ class Process:
 
     def decode_payload(self, item: bytes, header_size: int, debug: bool = False) -> any:
         """
-        Decode the incoming message from bytes
+        Decode the incoming message from bytes and update the information of the current beam: self.current_image_info
             :param item: the payload in bytes
             :param header_size: typically is 38 and looks like this: ZH026_3260_154200_TX39406066_4096_3000
             :param debug: bool to write or not an image
