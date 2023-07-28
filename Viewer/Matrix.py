@@ -101,7 +101,7 @@ def print_a_brief(matrix_csv):
 
 
 def main():
-    create_matrix('../trials/DB_merger/ZH026_3260_34K.png', '../trials/DB_merger/ZH026_3260_34K.csv')
+    create_matrix('../_dev_features/DB_merger/ZH026_3260_34K.png', '../trials/DB_merger/ZH026_3260_34K.csv')
 
 
 if __name__ == '__main__':
