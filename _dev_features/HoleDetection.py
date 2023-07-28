@@ -88,15 +88,25 @@ class HoleDetection:
 
     def process(self,
                 input_image: np.array,
-                blur_kernel: int = 5,
-                low_thres: int = 35,
-                high_thres: int = 255,
-                min_contour_area: int = 500,
-                min_dx_dy: float = 1.4,
-                min_box_area: int = 500,
-                safe_dx_dy: float = 1.7,
-                safe_box_area: int = 600):
-        """ input image is a gray image and return a list with boxes (rects)"""
+                blur_kernel: int,
+                low_thres: int,
+                high_thres: int,
+                min_contour_area: int,
+                min_dx_dy: float,
+                min_box_area: int,
+                safe_dx_dy: float,
+                safe_box_area: int):
+
+        """ input image is a gray image and return a list with boxes (rects)
+        :param, blur kernel = size of the kernel
+        :param, low_thres = low threshold to apply binarization
+        :param, high_thres = high threshold to apply binarization
+        :param, min_contour_area = min area in pixels of a countour to be of interest
+        :param, min_dx_dy = min ratio of a bounding box of interest
+        :param, min_box_area = min area in pixels of a bounding box to be of interest
+        :param, safe_dx_dy = min ratio of a bounding box for second filtering
+        :param, safe_box_area = min area of a bounding box for second filtering
+        """
 
         self.image = input_image.copy()
 
@@ -144,15 +154,16 @@ def generate_image_list(folder_path: str) -> list:
 
 
 def main(images_list: list) -> None:
+
     hole_detector = HoleDetection()
 
     for src in images_list:
         mat = cv2.imread(src)
-        mat_org = mat.copy()
         mat = mat[0:3000, 600:2300]  # y:y+h, x:x+w if crop needed
         gray = cv2.cvtColor(mat, cv2.COLOR_BGR2GRAY)
 
         start_time = time.time()
+
         boxes = hole_detector.process(gray,
                                       blur_kernel=5,
                                       low_thres=35,
@@ -161,16 +172,20 @@ def main(images_list: list) -> None:
                                       min_dx_dy=1.4,
                                       min_box_area=500,
                                       safe_dx_dy=1.7,
-                                      safe_box_area=600)
+                                      safe_box_area=6000)
 
         t = round((time.time() - start_time) * 1000, 2)
 
+        # draw if there are hole boxes
         if boxes is not None and len(boxes) > 0:
             for box in boxes:
                 x, y, w, h = box
-                print("Hole --- %s ms ---" % t)
                 cv2.rectangle(mat, (x, y), (x + w, y + h), (0, 0, 255), 2)
+            print("Hole --- %s ms ---" % t)
+        else:
+            print("Clean --- %s ms ---" % t)
 
+        # show all images
         mat = cv2.rotate(mat, cv2.ROTATE_90_CLOCKWISE)
         cv2.imshow('', cv2.resize(mat, None, fx=0.60, fy=0.40))  # np.hstack((mat, mat))
         cv2.waitKey()
