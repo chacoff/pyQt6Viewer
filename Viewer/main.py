@@ -82,7 +82,7 @@ class MainWindow(QMainWindow):
         self.panel_view = ImageView()
         self.panel_info = ImageInfo()
         self.inference = YoloV5OnnxSeams()
-        self.setWindowTitle('Seams Processor Viewer - v1.00j - RDEsch')
+        self.setWindowTitle('Seams Processor Viewer - v1.01j - RDEsch')
 
         # toolbar
         toolbar = self.addToolBar('Menu')
@@ -153,7 +153,6 @@ class MainWindow(QMainWindow):
         toolbar.addAction(open_matrix)
         toolbar.setStyleSheet('''
             QToolBar {
-                background-color: #f2f2f2;
                 border: 1px;
                 spacing: 6px;
                 margin-top: 6px;
@@ -188,7 +187,6 @@ class MainWindow(QMainWindow):
         self.brightness_slider.setValue(0)
         self.brightness_slider.setStyleSheet("""
             QSlider {
-                background-color: #D0D0D0;
                 height: 18px;
                 margin: 1px;
                 padding: 1px;
@@ -218,7 +216,6 @@ class MainWindow(QMainWindow):
         self.images_slider.setValue(1)
         self.images_slider.setStyleSheet("""
                     QSlider {
-                        background-color: #D0D0D0;
                         height: 18px;
                         margin: 1px;
                         padding: 1px;
@@ -672,7 +669,7 @@ class MainWindow(QMainWindow):
         dlg.exec()
 
     @staticmethod
-    def ground_t_calculator(a, b):
+    def ground_t_calculator(a: str, b: str) -> str:
         """ based on the model output classification and the user Ok and NotOk,
         returns the ground truth. The target is to avoid confusing the user to write Seams/NoSeams
         and instead, just accept or reject the output classification
