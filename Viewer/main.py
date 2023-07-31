@@ -1,28 +1,28 @@
 import os
 import cv2
 from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QLabel, QPushButton, \
-    QHBoxLayout, \
-    QFileDialog, QMainWindow, QSlider, QStatusBar, QMessageBox, QGridLayout, QDialog
+    QHBoxLayout, QFileDialog, QMainWindow, QSlider, QStatusBar, QMessageBox, QGridLayout, QDialog, QCheckBox
 from PyQt6.QtCore import Qt, QPointF, QDir, QSize, pyqtSignal, QFileInfo, QUrl
 from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices, QColor, QIcon
 import sys
 from timeit import default_timer as timer
 from imageview import ImageView
 from imageinfo import ImageInfo
-from YoloV5_Onnx_detect import YoloV5OnnxSeams
+from api_engine import YoloV5OnnxSeams
 import os
 import pandas as pd
-from Matrix import create_matrix
+from src.matrix import create_matrix
 import sqlite3
 import onnxruntime
 from src.production_config import XMLConfig
+from pathlib import Path
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         # Config
-        config = XMLConfig('./src/production_config.xml')
+        config = XMLConfig(f'{os.getcwd()}\\src\\production_config.xml')
 
         self.image_files = []
         self.current_image_name = '0000.bmp'
@@ -38,8 +38,8 @@ class MainWindow(QMainWindow):
         self.classes_iou = []
         self.counters = [0]  # counter for the instances of defect detection
         self.matrix_dict = {}
-        self.matrix_csv = self.unique_file('matrix/current_matrix_1.csv')
-        self.matrix_img = self.unique_file('matrix/confusion_matrix_1.png')
+        self.matrix_csv = self.unique_file(f'{os.getcwd()}\\matrix\\current_matrix_1.csv')
+        self.matrix_img = self.unique_file(f'{os.getcwd()}\\matrix\\confusion_matrix_1.png')
 
         self.default_folder = str(config.get_value('Viewer', 'default_dataset'))
         self.default_model = str(config.get_value('Viewer', 'default_model'))
@@ -85,7 +85,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('Seams Processor Viewer - v1.01j - RDEsch')
 
         # toolbar
-        toolbar = self.addToolBar('Menu')
+        self.toolbar = self.addToolBar('Menu')
         browse_action = QAction("Browse", self)  # QIcon('')
         browse_action.triggered.connect(self.browse_folder)
         browse_action.setShortcut('w')
@@ -133,25 +133,25 @@ class MainWindow(QMainWindow):
         add_to_dataset.triggered.connect(self._add_to_dataset)
         add_to_dataset.setShortcut('s')
         # Loading buttons
-        toolbar.addAction(browse_action)
-        toolbar.addAction(model_action)
-        toolbar.addAction(process_action)
-        toolbar.addSeparator()
+        self.toolbar.addAction(browse_action)
+        self.toolbar.addAction(model_action)
+        self.toolbar.addAction(process_action)
+        self.toolbar.addSeparator()
         # Actions buttons
-        toolbar.addAction(first_im_action)
-        toolbar.addAction(previous_action)
-        toolbar.addAction(center_image_action)
-        toolbar.addAction(next_action)
-        toolbar.addAction(last_im_action)
-        toolbar.addAction(reset_brightness)
-        toolbar.addSeparator()
+        self.toolbar.addAction(first_im_action)
+        self.toolbar.addAction(previous_action)
+        self.toolbar.addAction(center_image_action)
+        self.toolbar.addAction(next_action)
+        self.toolbar.addAction(last_im_action)
+        self.toolbar.addAction(reset_brightness)
+        self.toolbar.addSeparator()
         # Statistics buttons
-        toolbar.addAction(model_is_ok)
-        toolbar.addAction(model_is_not_ok)
-        toolbar.addAction(delete_image)
-        toolbar.addAction(add_to_dataset)
-        toolbar.addAction(open_matrix)
-        toolbar.setStyleSheet('''
+        self.toolbar.addAction(model_is_ok)
+        self.toolbar.addAction(model_is_not_ok)
+        self.toolbar.addAction(delete_image)
+        self.toolbar.addAction(add_to_dataset)
+        self.toolbar.addAction(open_matrix)
+        self.toolbar.setStyleSheet('''
             QToolBar {
                 border: 1px;
                 spacing: 6px;
@@ -176,7 +176,7 @@ class MainWindow(QMainWindow):
                 background-color: #a8a8a8;
             }
         ''')
-        toolbar.setMovable(False)
+        self.toolbar.setMovable(False)
 
         # Brightness slider
         self.brightness_slider = QSlider(Qt.Orientation.Horizontal)
@@ -288,10 +288,22 @@ class MainWindow(QMainWindow):
         i_block = QWidget()
         i_block.setLayout(image_block)
 
+        # big add-on
+        annotations_checkbox = QCheckBox("Annotations Mode")
+        annotations_checkbox.stateChanged.connect(self.toggleToolbar)
+        # big add-on
+
         image_view_layout.addWidget(b_block, 0)  # self.brightness_slider
         image_view_layout.addWidget(i_block, 0)  # self.images_slider
 
-        image_view_layout.addWidget(toolbar, 1)
+        _menu = QHBoxLayout()
+        _menu.setContentsMargins(0, 0, 0, 0)
+        _menu.addWidget(self.toolbar)
+        _menu.addWidget(annotations_checkbox)  # big add-on
+        w_menu = QWidget()
+        w_menu.setLayout(_menu)
+
+        image_view_layout.addWidget(w_menu)
         image_view_layout.setContentsMargins(0, 0, 0, 0)
 
         w_slider = QWidget()
@@ -304,6 +316,12 @@ class MainWindow(QMainWindow):
         w.setLayout(main_vertical_layout)
         self.setCentralWidget(w)
         self.statusBar().showMessage('Ready')
+
+    def toggleToolbar(self, state):
+        if state == 2:  # Checked state (Qt.CheckState.Checked)
+            self.toolbar.setDisabled(True)
+        else:
+            self.toolbar.setDisabled(False)
 
     def model_is_ok(self):
         """
@@ -365,31 +383,34 @@ class MainWindow(QMainWindow):
         df.to_csv(self.matrix_csv, index=False)
 
     def open_matrix_image(self):
-        create_matrix(self.matrix_img, self.matrix_csv)
 
-        # Charger l'image en utilisant QImage
-        image = QImage(self.matrix_img)
+        if create_matrix(self.matrix_img, self.matrix_csv):
 
-        # Convertir l'image en QPixmap
-        pixmap = QPixmap.fromImage(image)
+            # Charger l'image en utilisant QImage
+            image = QImage(self.matrix_img)
 
-        # Créer une fenêtre de dialogue
-        dialog = QDialog(self)
-        dialog.setWindowTitle("Confusion Matrix")
-        dialog.setModal(True)
+            # Convertir l'image en QPixmap
+            pixmap = QPixmap.fromImage(image)
 
-        # Créer un QLabel pour afficher l'image dans la fenêtre de dialogue
-        label = QLabel(dialog)
-        label.setPixmap(pixmap.scaled(900, 898, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+            # Créer une fenêtre de dialogue
+            dialog = QDialog(self)
+            dialog.setWindowTitle("Confusion Matrix")
+            dialog.setModal(True)
 
-        # Créer un layout et un widget pour contenir le QLabel
-        layout = QGridLayout(dialog)
-        widget = QWidget(dialog)
-        layout.addWidget(label)
-        widget.setLayout(layout)
+            # Créer un QLabel pour afficher l'image dans la fenêtre de dialogue
+            label = QLabel(dialog)
+            label.setPixmap(pixmap.scaled(900, 898, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
 
-        dialog.setLayout(layout)
-        dialog.show()
+            # Créer un layout et un widget pour contenir le QLabel
+            layout = QGridLayout(dialog)
+            widget = QWidget(dialog)
+            layout.addWidget(label)
+            widget.setLayout(layout)
+
+            dialog.setLayout(layout)
+            dialog.show()
+        else:
+            self.error_box('Oopsie!', 'Error while creating confusion matrix: Not enough data to analyze')
 
     def _toggle_delete_image(self) -> None:
         """ flag to toggle the delete image status """

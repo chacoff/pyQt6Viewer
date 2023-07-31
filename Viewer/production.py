@@ -5,7 +5,7 @@ import sys
 from typing import Dict, Union
 import cv2
 import numpy as np
-from YoloV5_Onnx_detect import YoloV5OnnxSeams
+from api_engine import YoloV5OnnxSeams
 import onnxruntime
 from timeit import default_timer as timer
 from src.production_config import XMLConfig

@@ -8,31 +8,37 @@ import sqlite3
 sns.set_style("whitegrid")
 
 
-# TODO @Pierrick, please turn it into a class
-def create_matrix(image_path, matrix_csv):
+def create_matrix(image_path, matrix_csv) -> bool:
 
-    df = pd.read_csv(matrix_csv)
-    df.index += 1
+    try:
+        df = pd.read_csv(matrix_csv)
+        df.index += 1
 
-    y_pred = df['Predict']
-    y_test = df['Ground_truth']
-    labels = y_pred.unique()
-    labels.sort()
-    print(labels)
+        y_pred = df['Predict']
+        y_test = df['Ground_truth']
+        labels = y_pred.unique()
+        labels.sort()
+        print(labels)
 
-    cf_matrix = confusion_matrix(y_test, y_pred)
+        cf_matrix = confusion_matrix(y_test, y_pred)
 
-    ax = sns.heatmap(cf_matrix/np.sum(cf_matrix), annot=True, fmt='.2%', cmap='Oranges')
+        ax = sns.heatmap(cf_matrix/np.sum(cf_matrix), annot=True, fmt='.2%', cmap='Oranges')
 
-    ax.set_title('TMB Seams - Confusion Matrix')
-    ax.set_xlabel('Predicted Values')
-    ax.set_ylabel('Actual Values ')
+        ax.set_title('TMB Seams - Confusion Matrix')
+        ax.set_xlabel('Predicted Values')
+        ax.set_ylabel('Actual Values ')
 
-    ax.xaxis.set_ticklabels(labels)
-    ax.yaxis.set_ticklabels(labels)
+        ax.xaxis.set_ticklabels(labels)
+        ax.yaxis.set_ticklabels(labels)
 
-    plt.savefig(image_path, bbox_inches='tight', dpi=199)
-    plt.clf()
+        plt.savefig(image_path, bbox_inches='tight', dpi=199)
+        plt.clf()
+
+        return True
+
+    except FileNotFoundError as e:
+
+        return False
 
 
 def merge_databases(source_db, target_db):
