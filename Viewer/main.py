@@ -43,6 +43,7 @@ class MainWindow(QMainWindow):
 
         self.default_folder = str(config.get_value('Viewer', 'default_dataset'))
         self.default_model = str(config.get_value('Viewer', 'default_model'))
+        self.annotations_mode_active = False
 
         # DB-sqlite
         self.db_name = self.unique_db()
@@ -90,13 +91,11 @@ class MainWindow(QMainWindow):
         browse_action.triggered.connect(self.browse_folder)
         browse_action.setShortcut('w')
         browse_action.setToolTip('(w) - select a folder with images')
-        self.process_action = QAction(QIcon('includes/process_32.png'), '(o) Yes', self)  # QAction("Process", self)
-        self.process_action.triggered.connect(self.process_image)
-        self.process_action.setShortcut('p')
-        self.process_action.setToolTip('(p) - Process an images')
         self.annotations_action = QAction("Annotations", self)
+        self.annotations_action.triggered.connect(self._load_annotations)
         self.annotations_action.setShortcut('l')
-        self.annotations_action.setToolTip('(l) - Load CVAT-polygons annotations xml')
+        self.annotations_action.setToolTip('(l) - Load CVAT-polygons: Annotations xml')
+        self.annotations_action.setDisabled(True)
         model_action = QAction("Model", self)
         model_action.triggered.connect(self.browse_model)
         model_action.setShortcut('m')
@@ -121,20 +120,30 @@ class MainWindow(QMainWindow):
         reset_brightness.triggered.connect(self.reset_brightness)
         reset_brightness.setShortcut('b')
         reset_brightness.setToolTip('(b) reset the brightness of the image to its original level')
-        model_is_ok = QAction(QIcon('includes/da_32.png'), '(o) Yes', self)
-        model_is_ok.triggered.connect(self.model_is_ok)
-        model_is_ok.setShortcut('o')
-        model_is_not_ok = QAction(QIcon('includes/net_32.png'), '(n) No', self)
-        model_is_not_ok.triggered.connect(self.model_is_not_ok)
-        model_is_not_ok.setShortcut('n')
-        delete_image = QAction(QIcon('includes/trash_32.png'), '(t) Flag to delete', self)
-        delete_image.triggered.connect(self._toggle_delete_image)
-        delete_image.setShortcut('t')
-        open_matrix = QAction(QIcon('includes/matrix_32.png'), 'Build confusion matrix', self)
-        open_matrix.triggered.connect(self.open_matrix_image)
-        add_to_dataset = QAction(QIcon('includes/server_32.png'), '(s) Flag to add in dataset', self)
-        add_to_dataset.triggered.connect(self._add_to_dataset)
-        add_to_dataset.setShortcut('s')
+        self.process_action = QAction(QIcon('includes/process_32.png'), '(o) Yes', self)  # QAction("Process", self)
+        self.process_action.triggered.connect(self.process_image)
+        self.process_action.setShortcut('p')
+        self.process_action.setToolTip('(p) - Process an images')
+        self.model_is_ok_action = QAction(QIcon('includes/da_32.png'), '(o) Yes', self)
+        self.model_is_ok_action.triggered.connect(self.model_is_ok)
+        self.model_is_ok_action.setShortcut('o')
+        self.model_is_ok_action.setToolTip('(o) - You are agree with the classification of the model')
+        self.model_is_not_ok_action = QAction(QIcon('includes/net_32.png'), '(n) No', self)
+        self.model_is_not_ok_action.triggered.connect(self.model_is_not_ok)
+        self.model_is_not_ok_action.setShortcut('n')
+        self.model_is_not_ok_action.setToolTip('(n) - You disagree with the classificatino of the model')
+        self.delete_image_action = QAction(QIcon('includes/trash_32.png'), '(t) Flag to delete', self)
+        self.delete_image_action.triggered.connect(self._toggle_delete_image)
+        self.delete_image_action.setShortcut('t')
+        self.delete_image_action.setToolTip('(t) - Flag the image for further deleting')
+        self.open_matrix_action = QAction(QIcon('includes/matrix_32.png'), 'Build confusion matrix', self)
+        self.open_matrix_action.triggered.connect(self.open_matrix_image)
+        self.open_matrix_action.setShortcut('x')
+        self.open_matrix_action.setToolTip('(x) - Generate a Confusion Matrix with the current classifications')
+        self.add_to_dataset_action = QAction(QIcon('includes/server_32.png'), '(s) Flag to add in dataset', self)
+        self.add_to_dataset_action.triggered.connect(self._add_to_dataset)
+        self.add_to_dataset_action.setShortcut('s')
+        self.add_to_dataset_action.setToolTip('(s) - Flag the image as an Image of Interest')
         # Loading buttons
         self.toolbar.addAction(browse_action)
         self.toolbar.addAction(model_action)
@@ -150,11 +159,11 @@ class MainWindow(QMainWindow):
         self.toolbar.addSeparator()
         # Statistics buttons
         self.toolbar.addAction(self.process_action)
-        self.toolbar.addAction(model_is_ok)
-        self.toolbar.addAction(model_is_not_ok)
-        self.toolbar.addAction(delete_image)
-        self.toolbar.addAction(add_to_dataset)
-        self.toolbar.addAction(open_matrix)
+        self.toolbar.addAction(self.model_is_ok_action)
+        self.toolbar.addAction(self.model_is_not_ok_action)
+        self.toolbar.addAction(self.delete_image_action)
+        self.toolbar.addAction(self.add_to_dataset_action)
+        self.toolbar.addAction(self.open_matrix_action)
         self.toolbar.setStyleSheet('''
             QToolBar {
                 border: 1px;
@@ -294,7 +303,7 @@ class MainWindow(QMainWindow):
 
         # big add-on
         annotations_checkbox = QCheckBox("Annotations Mode")
-        annotations_checkbox.stateChanged.connect(self.toggleToolbar)
+        annotations_checkbox.stateChanged.connect(self.toggle_toolbar)
         # big add-on
 
         image_view_layout.addWidget(b_block, 0)  # self.brightness_slider
@@ -321,11 +330,28 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(w)
         self.statusBar().showMessage('Ready')
 
-    def toggleToolbar(self, state):
-        if state == 2:  # Checked state (Qt.CheckState.Checked)
-            self.toolbar.setDisabled(True)
+    def toggle_toolbar(self, state):
+        if state == 2:  # Qt.CheckState.Checked
+            self.annotations_mode_active = True
+            self.annotations_action.setDisabled(False)
+            self.process_action.setDisabled(True)
+            self.model_is_ok_action.setDisabled(True)
+            self.model_is_not_ok_action.setDisabled(True)
+            self.delete_image_action.setDisabled(True)
+            self.add_to_dataset_action.setDisabled(True)
+            self.open_matrix_action.setDisabled(True)
         else:
-            self.toolbar.setDisabled(False)
+            self.annotations_mode_active = False
+            self.annotations_action.setDisabled(True)
+            self.process_action.setDisabled(False)
+            self.model_is_ok_action.setDisabled(False)
+            self.model_is_not_ok_action.setDisabled(False)
+            self.delete_image_action.setDisabled(False)
+            self.add_to_dataset_action.setDisabled(False)
+            self.open_matrix_action.setDisabled(False)
+
+    def _load_annotations(self):
+        print(f'Loading annotations: {self.current_image_name}')
 
     def model_is_ok(self):
         """
@@ -663,6 +689,8 @@ class MainWindow(QMainWindow):
             self.panel_view.display_image(self.filename())
             self.update_inference_time(0.0)
             self.set_status_bar()
+            if self.annotations_mode_active:
+                print('slider: loading annotations')
 
     def show_previous_image(self):
         if self.current_image_index > 0:
@@ -671,6 +699,8 @@ class MainWindow(QMainWindow):
             self.update_inference_time(0.0)
             self.images_slider.setValue(self.current_image_index)
             self.set_status_bar()
+            if self.annotations_mode_active:
+                print('previous: loading annotations')
 
     def show_next_image(self):
         if self.current_image_index < len(self.image_files) - 1:
@@ -679,6 +709,8 @@ class MainWindow(QMainWindow):
             self.update_inference_time(0.0)
             self.images_slider.setValue(self.current_image_index)
             self.set_status_bar()
+            if self.annotations_mode_active:
+                print('next: loading annotations')
 
     def show_first_image(self):
         """ show first image in the folder_path """
@@ -690,6 +722,8 @@ class MainWindow(QMainWindow):
         self.update_inference_time(0.0)
         self.images_slider.setValue(self.current_image_index)
         self.set_status_bar()
+        if self.annotations_mode_active:
+            print('first: loading annotations')
 
     def show_last_image(self):
         """ show last image in the folder_path"""
@@ -701,6 +735,8 @@ class MainWindow(QMainWindow):
         self.update_inference_time(0.0)
         self.images_slider.setValue(self.current_image_index)
         self.set_status_bar()
+        if self.annotations_mode_active:
+            print('last: loading annotations')
 
     def reset_brightness(self):
         """ reset slider and brightness """
