@@ -47,7 +47,7 @@ class ImageView(QGraphicsView):
             tool_tip = "{} - {:.2f}".format(predictions[i].class_name, predictions[i].confidence)
             rect_item.setToolTip(tool_tip)
             pen = QPen(colors[predictions[i].class_id])
-            pen.setWidth(3)
+            pen.setWidth(0)
             rect_item.setPen(pen)
 
             self.scene.addItem(rect_item)
