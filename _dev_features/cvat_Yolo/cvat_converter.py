@@ -72,7 +72,7 @@ class CVATYoloConverter:
 
 
 def main():
-    xml_dir: str = 'annotations (17).xml'
+    xml_dir: str = 'annotations.xml'
     classes_encoding: dict = {
         'Seams': 0,
         'Beam': 1,

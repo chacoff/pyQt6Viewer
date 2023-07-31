@@ -125,7 +125,7 @@ class MainWindow(QMainWindow):
         model_is_not_ok.triggered.connect(self.model_is_not_ok)
         model_is_not_ok.setShortcut('n')
         delete_image = QAction(QIcon('includes/trash_32.png'), '(t) Flag to delete', self)
-        delete_image.triggered.connect(self._delete_image)
+        delete_image.triggered.connect(self._toggle_delete_image)
         delete_image.setShortcut('t')
         open_matrix = QAction(QIcon('includes/matrix_32.png'), 'Build confusion matrix', self)
         open_matrix.triggered.connect(self.open_matrix_image)
@@ -391,11 +391,36 @@ class MainWindow(QMainWindow):
         dialog.setLayout(layout)
         dialog.show()
 
-    def _delete_image(self) -> None:
-        self.update_db('Bin', 1)
+    def _toggle_delete_image(self) -> None:
+        """ flag to toggle the delete image status """
+        value = self._read_field_value('Bin')
+
+        if value is None:  # the field doesn't exist yet
+            return
+
+        self.update_db('Bin', not value)
 
     def _add_to_dataset(self) -> None:
-        self.update_db('Dataset', 1)
+        """ flag the image to be add in the dataset as an important image """
+
+        value = self._read_field_value('Dataset')
+
+        if value is None:
+            return
+
+        self.update_db('Dataset', not value)
+
+    def _read_field_value(self, field: any) -> any:
+        """ read the field value in the DB"""
+
+        sq0 = f'SELECT {field} FROM seams_processor WHERE FileName = ?'
+        sq1 = sq0
+
+        self.cursor.execute(sq1, (self.current_image_name, ))
+
+        result = self.cursor.fetchone()
+
+        return result[0] if result is not None else None
 
     def set_status_bar(self):
         """ set the status bar with some information about the current image
@@ -527,7 +552,10 @@ class MainWindow(QMainWindow):
                     Seams, 
                     Beam, 
                     Souflure, 
-                    Hole,Water
+                    Hole,
+                    Water,
+                    Bin,
+                    Dataset
             ) VALUES (
                     ?, 
                     ?, 
@@ -536,16 +564,24 @@ class MainWindow(QMainWindow):
                     ?, 
                     ?, 
                     ?, 
+                    ?,
+                    ?,
                     ?
             )'''
 
         self.cursor.execute(sql, (self.current_image_name,
                                   'None',
                                   'None',
-                                  0, 0, 0, 0, 0))
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0))
         self.conn.commit()
 
-    def update_db(self, field, value):
+    def update_db(self, field: any, value: any):
         """ update rows according the field of interest and the current_image_name """
 
         sq0 = f'UPDATE seams_processor SET {field} = ? WHERE FileName = ?'
