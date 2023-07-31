@@ -18,7 +18,7 @@ def create_matrix(image_path, matrix_csv) -> bool:
         y_test = df['Ground_truth']
         labels = y_pred.unique()
         labels.sort()
-        print(labels)
+        # print(labels)
 
         cf_matrix = confusion_matrix(y_test, y_pred)
 
