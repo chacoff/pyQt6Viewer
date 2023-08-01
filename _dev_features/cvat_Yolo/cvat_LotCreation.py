@@ -45,8 +45,8 @@ def main(_source: str, _annotations_xml: str):
 
 if __name__ == '__main__':
     # Parameters:
-    source = f'C:\\Users\\gomezja\\PycharmProjects\\00_dataset\\Hole'
-    infoscribe_hole = f'C:\\Users\\gomezja\\PycharmProjects\\00_dataset\\_Annotations_Infoscribe\\CVAT for images\\Hole'
+    source = f'C:\\Users\\gomezja\\PycharmProjects\\00_dataset\\Seams'
+    infoscribe_hole = f'C:\\Users\\gomezja\\PycharmProjects\\00_dataset\\_Annotations_Infoscribe\\CVAT for images\\Seams'
 
     annotations_files = find_xml_files_recursive(infoscribe_hole)
     for xml_path in annotations_files:

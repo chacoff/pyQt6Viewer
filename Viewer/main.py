@@ -46,7 +46,6 @@ class MainWindow(QMainWindow):
 
         self.default_folder = str(config.get_value('Viewer', 'default_dataset'))
         self.default_model = str(config.get_value('Viewer', 'default_model'))
-        self.annotations_mode_active = False
 
         # DB-sqlite
         self.db_name = self.unique_db()
@@ -335,7 +334,6 @@ class MainWindow(QMainWindow):
 
     def toggle_toolbar(self, state):
         if state == 2:  # Qt.CheckState.Checked
-            self.annotations_mode_active = True
             self.annotations_action.setDisabled(False)
             self.model_action.setDisabled(True)
             self.process_action.setDisabled(True)
@@ -347,7 +345,6 @@ class MainWindow(QMainWindow):
             if self.classes == [] and self.classes_color == [] and self.classes_thre == [] and self.classes_iou == []:
                 self.read_classes_colors_thresholds()
         else:
-            self.annotations_mode_active = False
             self.annotations_action.setDisabled(True)
             self.model_action.setDisabled(False)
             self.process_action.setDisabled(False)
@@ -725,8 +722,6 @@ class MainWindow(QMainWindow):
             self.panel_view.display_image(self.filename())
             self.update_inference_time(0.0)
             self.set_status_bar()
-            if self.annotations_mode_active:
-                print('slider: loading annotations')
 
     def show_previous_image(self):
         if self.current_image_index > 0:
@@ -735,8 +730,6 @@ class MainWindow(QMainWindow):
             self.update_inference_time(0.0)
             self.images_slider.setValue(self.current_image_index)
             self.set_status_bar()
-            if self.annotations_mode_active:
-                print('previous: loading annotations')
 
     def show_next_image(self):
         if self.current_image_index < len(self.image_files) - 1:
@@ -745,8 +738,6 @@ class MainWindow(QMainWindow):
             self.update_inference_time(0.0)
             self.images_slider.setValue(self.current_image_index)
             self.set_status_bar()
-            if self.annotations_mode_active:
-                print('next: loading annotations')
 
     def show_first_image(self):
         """ show first image in the folder_path """
@@ -758,8 +749,6 @@ class MainWindow(QMainWindow):
         self.update_inference_time(0.0)
         self.images_slider.setValue(self.current_image_index)
         self.set_status_bar()
-        if self.annotations_mode_active:
-            print('first: loading annotations')
 
     def show_last_image(self):
         """ show last image in the folder_path"""
@@ -771,8 +760,6 @@ class MainWindow(QMainWindow):
         self.update_inference_time(0.0)
         self.images_slider.setValue(self.current_image_index)
         self.set_status_bar()
-        if self.annotations_mode_active:
-            print('last: loading annotations')
 
     def reset_brightness(self):
         """ reset slider and brightness """
