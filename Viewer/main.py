@@ -340,6 +340,8 @@ class MainWindow(QMainWindow):
             self.delete_image_action.setDisabled(True)
             self.add_to_dataset_action.setDisabled(True)
             self.open_matrix_action.setDisabled(True)
+            if self.classes == [] and self.classes_color == [] and self.classes_thre == [] and self.classes_iou == []:
+                self.read_classes_colors_thresholds()
         else:
             self.annotations_mode_active = False
             self.annotations_action.setDisabled(True)
@@ -527,7 +529,8 @@ class MainWindow(QMainWindow):
             return
 
         self.update_model_name(f'Model: {model_name}')
-        self.read_classes_colors_thresholds()
+        if self.classes == [] and self.classes_color == [] and self.classes_thre == [] and self.classes_iou == []:
+            self.read_classes_colors_thresholds()
         # load model in memory immediately
         self._load_model(self.model_path, 'cpu')
 
