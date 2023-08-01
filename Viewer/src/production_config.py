@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 from PyQt6.QtGui import QColor
 
+
 class XMLConfig:
     def __init__(self, xml_path):
         self.xml_path = xml_path

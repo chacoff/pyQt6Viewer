@@ -1,10 +1,29 @@
 import cv2
 from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QLabel, QPushButton, QHBoxLayout, \
-    QFileDialog, QMainWindow, QSlider, QStatusBar, QGraphicsPixmapItem, QGraphicsItem, QGraphicsRectItem
+    QFileDialog, QMainWindow, QSlider, QStatusBar, QGraphicsPixmapItem, QGraphicsItem, QGraphicsRectItem, QGraphicsPolygonItem
 from PyQt6.QtCore import Qt, QPointF, QDir, QSize, pyqtSignal, QFileInfo, QUrl, QRectF
-from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices, QColor, QIcon, QPen
+from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices, QColor, QIcon, QPen, QPolygonF
 import sys
-import numpy
+import numpy as np
+
+
+class Annotation:
+    def __init__(self, points: np.array, label: str, color: QColor) -> None:
+        self._points: np.array = points
+        self._label: str = label
+        self._color: QColor = color
+
+    @property
+    def points(self) -> np.array:
+        return self._points
+
+    @property
+    def label(self) -> str:
+        return self._label
+
+    @property
+    def color(self) -> QColor:
+        return self._color
 
 
 class ImageView(QGraphicsView):
@@ -30,6 +49,29 @@ class ImageView(QGraphicsView):
         self.channel = None
         self.brightness = 0
         self.rect_items = []
+        self.polygon_items = []
+
+    def draw_annotations(self, annotations: list):
+        """ draw Infoscribe CVAT annotations around the detected defects """
+
+        self.remove_existing_items()
+
+        for annotation in annotations:
+            _points = annotation._points
+            _points_array = self.points_to_points_array(_points)
+
+            polygon = QPolygonF()
+
+            for p in _points_array:
+                polygon.append(QPointF(*p))
+
+            item = QGraphicsPolygonItem(polygon)
+            pen = QPen(annotation._color)
+            pen.setWidth(0)
+            item.setPen(pen)
+
+            self.scene.addItem(item)
+            self.polygon_items.append(item)
 
     def draw_boxes_and_labels(self, predictions, colors):
         """ draw bounding boxes around the detected defects """
@@ -57,6 +99,10 @@ class ImageView(QGraphicsView):
         for item in self.rect_items:
             self.scene.removeItem(item)
         self.rect_items = []
+
+        for item in self.polygon_items:
+            self.scene.removeItem(item)
+        self.polygon_items = []
 
     def display_image(self, image_path):
         """" load an image and update the scene: removes all rect_items and sets a new photo """
@@ -122,4 +168,20 @@ class ImageView(QGraphicsView):
         if value == 0:
             self.brightness = 0
             self.updateImageItem()
+
+    @staticmethod
+    def points_to_points_array(points) -> np.array:
+        """ CVAT polygons to a numpy array """
+        points_array = np.empty((len(points), 2), dtype=np.float64)
+
+        for i, point_str in enumerate(points):
+            x_str, y_str = point_str.split(',')
+            x = float(x_str)
+            y = float(y_str)
+            points_array[i] = [x, y]
+
+        points_array = np.array(points_array)
+
+        return points_array
+
 

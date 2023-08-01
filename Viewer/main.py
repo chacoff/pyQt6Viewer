@@ -1,3 +1,4 @@
+import abc
 import os
 import cv2
 from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QLabel, QPushButton, \
@@ -6,7 +7,7 @@ from PyQt6.QtCore import Qt, QPointF, QDir, QSize, pyqtSignal, QFileInfo, QUrl
 from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices, QColor, QIcon
 import sys
 from timeit import default_timer as timer
-from imageview import ImageView
+from imageview import ImageView, Annotation
 from imageinfo import ImageInfo
 from api_engine import YoloV5OnnxSeams
 import os
@@ -15,7 +16,9 @@ from src.matrix import create_matrix
 import sqlite3
 import onnxruntime
 from src.production_config import XMLConfig
+import xml.etree.ElementTree as ET
 from pathlib import Path
+import numpy as np
 
 
 class MainWindow(QMainWindow):
@@ -87,39 +90,39 @@ class MainWindow(QMainWindow):
 
         # toolbar
         self.toolbar = self.addToolBar('Menu')
-        browse_action = QAction("Browse", self)  # QIcon('')
+        browse_action = QAction("Browse Images", self)  # QIcon('')
         browse_action.triggered.connect(self.browse_folder)
         browse_action.setShortcut('w')
-        browse_action.setToolTip('(w) - select a folder with images')
-        self.annotations_action = QAction("Annotations", self)
+        browse_action.setToolTip('(w) - Select a folder with images')
+        self.annotations_action = QAction("Load Annotations", self)
         self.annotations_action.triggered.connect(self._load_annotations)
         self.annotations_action.setShortcut('l')
         self.annotations_action.setToolTip('(l) - Load CVAT-polygons: Annotations xml')
         self.annotations_action.setDisabled(True)
-        model_action = QAction("Model", self)
-        model_action.triggered.connect(self.browse_model)
-        model_action.setShortcut('m')
-        model_action.setToolTip('(m) - load a model for classification')
         first_im_action = QAction("<< First Image", self)
         first_im_action.triggered.connect(self.show_first_image)
         previous_action = QAction("< Previous", self)
         previous_action.triggered.connect(self.show_previous_image)
         previous_action.setShortcut('a')
-        previous_action.setToolTip('(a) goes to the previous image')
+        previous_action.setToolTip('(a) Goes to the previous image')
         center_image_action = QAction('Reset Zoom', self)
         center_image_action.triggered.connect(self.panel_view.setImageinCenter)
         center_image_action.setShortcut('c')
-        center_image_action.setToolTip('(c) center the image and fullfill the available space')
+        center_image_action.setToolTip('(c) Center the image and fullfill the available space')
         next_action = QAction("Next >", self)
         next_action.triggered.connect(self.show_next_image)
         next_action.setShortcut('d')
-        next_action.setToolTip('(d) goes to the next image')
+        next_action.setToolTip('(d) Goes to the next image')
         last_im_action = QAction("Last Image >>", self)
         last_im_action.triggered.connect(self.show_last_image)
         reset_brightness = QAction('Reset Brightness', self)
         reset_brightness.triggered.connect(self.reset_brightness)
         reset_brightness.setShortcut('b')
-        reset_brightness.setToolTip('(b) reset the brightness of the image to its original level')
+        reset_brightness.setToolTip('(b) Reset the brightness of the image to its original level')
+        self.model_action = QAction(QIcon('includes/model_32.png'), '(m) Load a model', self)  # QAction("Model", self)
+        self.model_action.triggered.connect(self.browse_model)
+        self.model_action.setShortcut('m')
+        self.model_action.setToolTip('(m) - Load a model for classification')
         self.process_action = QAction(QIcon('includes/process_32.png'), '(o) Yes', self)  # QAction("Process", self)
         self.process_action.triggered.connect(self.process_image)
         self.process_action.setShortcut('p')
@@ -127,7 +130,7 @@ class MainWindow(QMainWindow):
         self.model_is_ok_action = QAction(QIcon('includes/da_32.png'), '(o) Yes', self)
         self.model_is_ok_action.triggered.connect(self.model_is_ok)
         self.model_is_ok_action.setShortcut('o')
-        self.model_is_ok_action.setToolTip('(o) - You are agree with the classification of the model')
+        self.model_is_ok_action.setToolTip('(o) - You agree with the classification of the model')
         self.model_is_not_ok_action = QAction(QIcon('includes/net_32.png'), '(n) No', self)
         self.model_is_not_ok_action.triggered.connect(self.model_is_not_ok)
         self.model_is_not_ok_action.setShortcut('n')
@@ -146,7 +149,6 @@ class MainWindow(QMainWindow):
         self.add_to_dataset_action.setToolTip('(s) - Flag the image as an Image of Interest')
         # Loading buttons
         self.toolbar.addAction(browse_action)
-        self.toolbar.addAction(model_action)
         self.toolbar.addAction(self.annotations_action)
         self.toolbar.addSeparator()
         # Actions buttons
@@ -158,6 +160,7 @@ class MainWindow(QMainWindow):
         self.toolbar.addAction(reset_brightness)
         self.toolbar.addSeparator()
         # Statistics buttons
+        self.toolbar.addAction(self.model_action)
         self.toolbar.addAction(self.process_action)
         self.toolbar.addAction(self.model_is_ok_action)
         self.toolbar.addAction(self.model_is_not_ok_action)
@@ -334,6 +337,7 @@ class MainWindow(QMainWindow):
         if state == 2:  # Qt.CheckState.Checked
             self.annotations_mode_active = True
             self.annotations_action.setDisabled(False)
+            self.model_action.setDisabled(True)
             self.process_action.setDisabled(True)
             self.model_is_ok_action.setDisabled(True)
             self.model_is_not_ok_action.setDisabled(True)
@@ -345,6 +349,7 @@ class MainWindow(QMainWindow):
         else:
             self.annotations_mode_active = False
             self.annotations_action.setDisabled(True)
+            self.model_action.setDisabled(False)
             self.process_action.setDisabled(False)
             self.model_is_ok_action.setDisabled(False)
             self.model_is_not_ok_action.setDisabled(False)
@@ -352,8 +357,36 @@ class MainWindow(QMainWindow):
             self.add_to_dataset_action.setDisabled(False)
             self.open_matrix_action.setDisabled(False)
 
-    def _load_annotations(self):
-        print(f'Loading annotations: {self.current_image_name}')
+    def _load_annotations(self) -> None:
+
+        def classes_encoder(_label) -> int:
+
+            classes_encoding: dict = {
+                'Seams': 0,
+                'Beam': 1,
+                'Souflure': 2,
+                'Hole': 3,
+                'Water': 4
+            }
+            return classes_encoding[_label]
+
+        root = ET.parse(f'{self.folder_path}\\annotations.xml').getroot()
+        meta = root.findall("image")
+
+        annotation_list = []
+        for _image in meta:
+            _name: str = str(_image.attrib["name"])
+
+            if _name == self.current_image_name:
+                object_metas = _image.findall("polygon")
+
+                for bbox in object_metas:
+                    label = bbox.attrib['label']
+                    points = bbox.attrib['points'].split(';')
+                    annotation = Annotation(points, label, self.classes_color[classes_encoder(label)])
+                    annotation_list.append(annotation)
+
+        self.panel_view.draw_annotations(annotation_list)
 
     def model_is_ok(self):
         """
