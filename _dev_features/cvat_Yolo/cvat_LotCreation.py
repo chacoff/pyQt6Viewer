@@ -45,15 +45,15 @@ def main(_source: str, _annotations_xml: str):
 
 if __name__ == '__main__':
     # Parameters:
-    source = f'C:\\Users\\gomezja\\PycharmProjects\\00_dataset\\Seams'
-    infoscribe_hole = f'C:\\Users\\gomezja\\PycharmProjects\\00_dataset\\_Annotations_Infoscribe\\CVAT for images\\Seams'
+    source1 = f'C:\\Users\\gomezja\\PycharmProjects\\00_dataset\\training'
+    infoscribe = f'C:\\Users\\gomezja\\PycharmProjects\\00_dataset\\_Annotations_Infoscribe\\Lots'
 
-    annotations_files = find_xml_files_recursive(infoscribe_hole)
+    annotations_files = find_xml_files_recursive(infoscribe)
     for xml_path in annotations_files:
 
         index = xml_path.split('\\')
         lot_xml = "\\".join(index[-2:])
         print(lot_xml)
 
-        main(source, xml_path)
-        shutil.move(os.path.join(infoscribe_hole, lot_xml), os.path.join(source, lot_xml))
+        main(source1, xml_path)
+        shutil.move(os.path.join(infoscribe, lot_xml), os.path.join(source1, lot_xml))
