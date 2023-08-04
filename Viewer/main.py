@@ -45,6 +45,7 @@ class MainWindow(QMainWindow):
 
         self.default_folder = str(config.get_value('Viewer', 'default_dataset'))
         self.default_model = str(config.get_value('Viewer', 'default_model'))
+        self.annotation_list: list = []
 
         # DB-sqlite
         self.db_name = self.unique_db()
@@ -380,7 +381,7 @@ class MainWindow(QMainWindow):
         root = ET.parse(f'{self.folder_path}\\annotations.xml').getroot()
         meta = root.findall("image")
 
-        annotation_list = []
+        self.annotation_list = []
         for _image in meta:
             _name: str = str(_image.attrib["name"])
 
@@ -391,12 +392,16 @@ class MainWindow(QMainWindow):
                     label = bbox.attrib['label']
                     points = bbox.attrib['points'].split(';')
                     annotation = Annotation(points, label, self.classes_color[classes_encoder(label)])
-                    annotation_list.append(annotation)
+                    self.annotation_list.append(annotation)
 
         self.hide_annotations_action.setChecked(True)
-        self.panel_view.draw_annotations(annotation_list)
+        self.panel_view.draw_annotations(self.annotation_list)
 
     def _toggle_annotations(self, checked: bool) -> None:
+        if not self.annotation_list:
+            self.error_box('No annotations', 'Load annotations before attempting to Show/Hide them')
+            return
+
         self.hide_annotations_action.setText('Hide Annotations' if checked else 'Show Annotations')
         self.panel_view.show_hide_items(checked)
 
@@ -737,6 +742,7 @@ class MainWindow(QMainWindow):
             self.panel_view.display_image(self.filename())
             self.update_inference_time(0.0)
             self.set_status_bar()
+            self.annotation_list = []
 
     def show_previous_image(self):
         if self.current_image_index > 0:
@@ -745,6 +751,7 @@ class MainWindow(QMainWindow):
             self.update_inference_time(0.0)
             self.images_slider.setValue(self.current_image_index)
             self.set_status_bar()
+            self.annotation_list = []
 
     def show_next_image(self):
         if self.current_image_index < len(self.image_files) - 1:
@@ -753,6 +760,7 @@ class MainWindow(QMainWindow):
             self.update_inference_time(0.0)
             self.images_slider.setValue(self.current_image_index)
             self.set_status_bar()
+            self.annotation_list = []
 
     def show_first_image(self):
         """ show first image in the folder_path """
@@ -764,6 +772,7 @@ class MainWindow(QMainWindow):
         self.update_inference_time(0.0)
         self.images_slider.setValue(self.current_image_index)
         self.set_status_bar()
+        self.annotation_list = []
 
     def show_last_image(self):
         """ show last image in the folder_path"""
@@ -775,6 +784,7 @@ class MainWindow(QMainWindow):
         self.update_inference_time(0.0)
         self.images_slider.setValue(self.current_image_index)
         self.set_status_bar()
+        self.annotation_list = []
 
     def reset_brightness(self):
         """ reset slider and brightness """
