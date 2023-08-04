@@ -33,7 +33,6 @@ class MainWindow(QMainWindow):
         self.folder_path = None
         self._model = None
         self.model_path = None
-        self.net = None
         self.classes_names_raw = config.get_classes_colors_thres()
         self.classes = []
         self.classes_color = []
@@ -98,6 +97,13 @@ class MainWindow(QMainWindow):
         self.annotations_action.setShortcut('l')
         self.annotations_action.setToolTip('(l) - Load CVAT-polygons: Annotations xml')
         self.annotations_action.setDisabled(True)
+        self.hide_annotations_action = QAction("Hide Annotations", self)
+        self.hide_annotations_action.setShortcut('h')
+        self.hide_annotations_action.setToolTip('(h) - Show/Hide CVAT-polygons')
+        self.hide_annotations_action.setDisabled(True)
+        self.hide_annotations_action.setCheckable(True)
+        self.hide_annotations_action.setChecked(True)
+        self.hide_annotations_action.toggled.connect(self._toggle_annotations)
         first_im_action = QAction("<< First Image", self)
         first_im_action.triggered.connect(self.show_first_image)
         previous_action = QAction("< Previous", self)
@@ -149,6 +155,8 @@ class MainWindow(QMainWindow):
         # Loading buttons
         self.toolbar.addAction(browse_action)
         self.toolbar.addAction(self.annotations_action)
+        self.toolbar.addAction(self.hide_annotations_action)
+        self.toolbar.widgetForAction(self.hide_annotations_action).setFixedWidth(135)
         self.toolbar.addSeparator()
         # Actions buttons
         self.toolbar.addAction(first_im_action)
@@ -335,6 +343,7 @@ class MainWindow(QMainWindow):
     def toggle_toolbar(self, state):
         if state == 2:  # Qt.CheckState.Checked
             self.annotations_action.setDisabled(False)
+            self.hide_annotations_action.setDisabled(False)
             self.model_action.setDisabled(True)
             self.process_action.setDisabled(True)
             self.model_is_ok_action.setDisabled(True)
@@ -346,6 +355,7 @@ class MainWindow(QMainWindow):
                 self.read_classes_colors_thresholds()
         else:
             self.annotations_action.setDisabled(True)
+            self.hide_annotations_action.setDisabled(True)
             self.model_action.setDisabled(False)
             self.process_action.setDisabled(False)
             self.model_is_ok_action.setDisabled(False)
@@ -383,7 +393,12 @@ class MainWindow(QMainWindow):
                     annotation = Annotation(points, label, self.classes_color[classes_encoder(label)])
                     annotation_list.append(annotation)
 
+        self.hide_annotations_action.setChecked(True)
         self.panel_view.draw_annotations(annotation_list)
+
+    def _toggle_annotations(self, checked: bool) -> None:
+        self.hide_annotations_action.setText('Hide Annotations' if checked else 'Show Annotations')
+        self.panel_view.show_hide_items(checked)
 
     def model_is_ok(self):
         """

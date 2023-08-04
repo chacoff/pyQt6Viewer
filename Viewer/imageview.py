@@ -104,6 +104,14 @@ class ImageView(QGraphicsView):
             self.scene.removeItem(item)
         self.polygon_items = []
 
+    def show_hide_items(self, _visible: bool):
+
+        for item in self.rect_items:
+            item.setVisible(_visible)
+
+        for item in self.polygon_items:
+            item.setVisible(_visible)
+
     def display_image(self, image_path):
         """" load an image and update the scene: removes all rect_items and sets a new photo """
 
