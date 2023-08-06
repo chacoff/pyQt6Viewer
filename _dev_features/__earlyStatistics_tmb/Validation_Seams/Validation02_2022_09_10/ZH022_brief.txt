@@ -1,0 +1,10 @@
+
+PREDICTIONS
+          counts      %
+Seams         49  96.08
+No Seams       2   3.92
+
+GROUND TRUTH
+          counts      %
+No Seams      26  50.98
+Seams         25  49.02

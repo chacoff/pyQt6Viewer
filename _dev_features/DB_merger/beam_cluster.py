@@ -31,14 +31,16 @@ def main() -> None:
 
     df = pd.read_csv(file_path)
     df = timestamp_transform(df)
-    df = kmeans_fit(df, 180, 0)
+    df = kmeans_fit(df, 270, 0)
 
     df.to_csv(output_path, index=False)
 
-    plt.scatter(df['Timestamp'], [0] * len(df), c=df['Cluster'], cmap='Oranges')
-    plt.xlabel('Standardized Timestamp')
-    plt.ylabel('Cluster')
-    plt.show()
+    show: bool = False
+    if show:
+        plt.scatter(df['Timestamp'], [0] * len(df), c=df['Cluster'], cmap='Oranges')
+        plt.xlabel('Standardized Timestamp')
+        plt.ylabel('Cluster')
+        plt.show()
 
 
 if __name__ == "__main__":

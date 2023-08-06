@@ -1,0 +1,3 @@
+Out of 3112 images, with a threshold of 95.0%, 2428 images were classified by the API, representing a 78.02%
+
+17 from the 2428 were removed
