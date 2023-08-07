@@ -554,7 +554,7 @@ class MainWindow(QMainWindow):
             return
 
         q_dir = QDir(self.folder_path)
-        q_dir.setNameFilters(['*.bmp', '*.png'])
+        q_dir.setNameFilters(['*.bmp', '*.png', '*.jpg'])
         q_dir.setSorting(QDir.SortFlag.Name)
 
         self.image_files = [q_dir.absoluteFilePath(file_name) for file_name in q_dir.entryList()]
