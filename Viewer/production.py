@@ -172,7 +172,7 @@ class Process:
                     t1 = timer()
 
                     classification = self.classifier(predictions)
-                    process_msg = f'{classification} - inference time: %.2f ms' % ((t1-t0) * 1000.0)
+                    process_msg = f'{classification} - time: %.2f ms' % ((t1-t0) * 1000.0)
 
                     if self.current_image_info["profile"] != '00000':
                         self.db_job(process_msg)  # skip database inserting if there is no MES information
@@ -196,10 +196,11 @@ class Process:
                 # nothing to dequeue is either because the software started or a beam already passed
                 if self.current_image_info['n_images'] != 0:
                     self.db_update()  # updates database, if n_images is not zero, means a beam already was processed
-                    print(f'>> DB Updated ID_TM_PART: {self.current_image_info.get("beam_id")} -- '
+                    print(f'>> DB Updated: {self.current_image_info.get("profile")}_{self.current_image_info.get("campaign")}_{self.current_image_info.get("beam_id")} -- '
                           f'n_images: {self.current_image_info.get("n_images")} - '
                           f'seams: {self.current_image_info.get("Seams")} - '
-                          f'hole: {self.current_image_info.get("Hole")}')
+                          f'hole: {self.current_image_info.get("Hole")} at '
+                          f'{datetime.now()}')
                     self.current_image_info['n_images'] = 0  # the rest are zeroing before classification of a new beam
                 # no data to process
                 time.sleep(0.100)
@@ -243,7 +244,8 @@ class Process:
         _num_mont: int = self.current_image_info.get('campaign')
         _seams_count: int = self.current_image_info.get('Seams')
         _image_count: int = self.current_image_info.get('n_images')
-        _seams_rate: float = round(_seams_count / _image_count, 3)
+        _seams_rate: int = int((_seams_count / _image_count) * 10000)
+        _seams_rate: float = _seams_rate/10000
 
         sql_query = f"""UPDATE [SEAMS_DETECTIONS].[dbo].[BEAM_INFO] SET seamsCount = ?, imageCount = ?, seamsRate = ? 
         WHERE ID_TM_PART = ? AND GRP_MONT = ? AND NUM_MONT = ?"""
@@ -287,14 +289,14 @@ class Process:
         """ it recognizes if a new entry gotta be inserted or if we are still processing the same beam """
 
         if self.current_image_info['beam_id'] == self.last_beam_id:
-            print(f'Update ID_TM_PART: {self.current_image_info.get("beam_id")} -- '
+            print(f'Update: {self.current_image_info.get("profile")}_{self.current_image_info.get("campaign")}_{self.current_image_info.get("beam_id")} -- '
                   f'{msg} - '
                   f'n_images: {self.current_image_info.get("n_images")} - '
                   f'seams: {self.current_image_info.get("Seams")} - '
                   f'hole: {self.current_image_info.get("Hole")}')
         else:
             self.last_beam_id = self.current_image_info['beam_id']
-            print(f'>> Insert ID_TM_PART: {self.current_image_info.get("beam_id")} -- '
+            print(f'>> Insert: {self.current_image_info.get("profile")}_{self.current_image_info.get("campaign")}_{self.current_image_info.get("beam_id")} -- '
                   f'{msg} - '
                   f'n_images: {self.current_image_info.get("n_images")} - '
                   f'seams: {self.current_image_info.get("Seams")} - '
