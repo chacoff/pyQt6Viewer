@@ -42,7 +42,7 @@ def search_bmp_images_from_csv(_folder_path: str, _csv_filename: str) -> list:
                 _creation_date = get_creation_date(_filepath)
                 if _creation_date is None:
                     _creation_date = get_modified_date(_filepath)
-                found_images.append((_filename, _filepath, _creation_date))
+                found_images.append((_filename, _creation_date))
             pbar.update(1)
         pbar.close()
 
@@ -58,10 +58,12 @@ def main() -> None:
     results = search_bmp_images_from_csv(folder_path, csv_filename)
 
     if results:
-        for filename, filepath, creation_date in results:
-            print(f"File: {filename}, Path: {filepath}, Creation Date: {creation_date}")
+        i: int = 1
+        for filename, creation_date in results:
+            print(f"File {i}: {filename}, Creation Date: {creation_date}")
+            i += 1
 
-        df_results = pd.DataFrame(results, columns=['File', 'Path', 'Modification Date'])
+        df_results = pd.DataFrame(results, columns=['File', 'Modification Date'])
         df_results.to_csv(output_csv_path, index=False)
 
     else:
