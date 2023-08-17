@@ -12,8 +12,8 @@ from ...postprocess.nms import nms_np
 
 
 def non_max_suppression_np(predictions: np.ndarray,
-                           conf_thres: float = 0.15,
-                           iou_thres: float = 0.15,
+                           conf_thres: list,
+                           iou_thres: list,
                            agnostic: bool = False,
                            multi_label: bool = False,
                            nms: Callable = nms_np) -> List[np.ndarray]:
@@ -22,10 +22,10 @@ def non_max_suppression_np(predictions: np.ndarray,
     Args:
         predictions (np.ndarray): predictions from yolov inference
 
-        conf_thres (float, optional): confidence threshold in range 0-1.
+        conf_thres (list, mandatory): confidence threshold in range 0-1.
         Defaults to 0.25.
 
-        iou_thres (float, optional): IoU threshold in range 0-1 for NMS filtering.
+        iou_thres (list, optional): IoU threshold in range 0-1 for NMS filtering.
         Defaults to 0.45.
 
         agnostic (bool, optional): Perform class-agnostic NMS. Defaults to False.
@@ -43,13 +43,14 @@ def non_max_suppression_np(predictions: np.ndarray,
     max_wh = 4096  # (pixels) minimum and maximum box width and height
     max_nms = 30000  # maximum number of boxes into torchvision.ops.nms()
     time_limit = 10.0  # seconds to quit after
+    min_conf_thres = 0.01
 
     # number of classes > 1 (multiple labels per box (adds 0.5ms/img))
     multi_label &= (predictions.shape[2] - 5) > 1
 
     start_time = time.time()
     output = [np.zeros((0, 6))] * predictions.shape[0]
-    confidences = predictions[..., 4] > conf_thres
+    confidences = predictions[..., 4] > min_conf_thres
 
     # image index, image inference
     for batch_index, prediction in enumerate(predictions):
@@ -62,7 +63,11 @@ def non_max_suppression_np(predictions: np.ndarray,
             continue
 
         # Detections matrix nx6 (xyxy, conf, cls)
-        prediction = detection_matrix(prediction, multi_label, conf_thres)
+        prediction = detection_matrix(prediction, multi_label, min_conf_thres)
+        
+        # @jaime: we use one low threshold of 1% and then we filter according the desire threshold per class
+        filtered_prediction = [element.tolist() for element in prediction if element[4] >= conf_thres[int(element[5])]]
+        prediction = np.array(filtered_prediction)
 
         # Check shape; # number of boxes
         if not prediction.shape[0]:  # no boxes
@@ -76,7 +81,7 @@ def non_max_suppression_np(predictions: np.ndarray,
         # Batched NMS
         classes = prediction[:, 5:6] * (0 if agnostic else max_wh)
         indexes = nms(prediction[:, :4] + classes, prediction[:, 4],
-                      maximum_detections, iou_thres)
+                      maximum_detections, iou_thres[0])  # TODO using only one IOU
 
         # pick relevant boxes
         output[batch_index] = prediction[indexes, :]
@@ -120,7 +125,6 @@ def detection_matrix(predictions: np.ndarray, multi_label: bool,
         j = np.expand_dims(predictions[:, 5:].argmax(axis=1), axis=1)
         conf = np.take_along_axis(predictions[:, 5:], j, axis=1)
 
-        predictions = np.concatenate((box, conf, j.astype('float')),
-                                     1)[conf.reshape(-1) > conf_thres]
+        predictions = np.concatenate((box, conf, j.astype('float')), 1)[conf.reshape(-1) > conf_thres]
 
     return predictions

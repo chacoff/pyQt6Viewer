@@ -234,10 +234,10 @@ class MainWindow(QMainWindow):
 
         # Images slider
         self.images_slider = QSlider(Qt.Orientation.Horizontal)
-        self.images_slider.setMinimum(1)
+        self.images_slider.setMinimum(0)
         self.images_slider.setSingleStep(1)
         self.images_slider.valueChanged.connect(self.image_slider_handler)
-        self.images_slider.setValue(1)
+        self.images_slider.setValue(0)
         self.images_slider.setStyleSheet("""
                     QSlider {
                         height: 18px;
@@ -560,8 +560,10 @@ class MainWindow(QMainWindow):
         self.image_files = [q_dir.absoluteFilePath(file_name) for file_name in q_dir.entryList()]
 
         if self.image_files:
+            self.current_image_index = 0
             self.panel_view.display_image(self.filename())
-            self.images_slider.setMaximum(len(self.image_files))
+            self.images_slider.setValue(0)
+            self.images_slider.setMaximum(len(self.image_files)-1)
             self.bright_label.setText(f'0 %')
             self.brightness_slider.setValue(0)
             self.set_status_bar()
@@ -605,16 +607,27 @@ class MainWindow(QMainWindow):
             self.classes_thre.append(thre)
             self.classes_iou.append(iou)
 
+    def get_all_confidences(self) -> list:
+        """ column (2) from panel info corresponde to the confidences """
+        _all_confs = self.panel_info.get_thres_item(2)
+        _all_confs = [x / 100 for x in _all_confs]
+
+        return _all_confs
+
+    def get_all_ious(self) -> list:
+        """ column (3) from panel info corresponde to the IOUs """
+        _all_ious = self.panel_info.get_thres_item(3)
+        _all_ious = [x / 100 for x in _all_ious]
+
+        return _all_ious
+
     def process_image(self):
         """ process the image will trigger the statistic counters and will start filling
         the dictionary self.matrix_dict storing all the images already processed
         """
 
-        all_confs = self.panel_info.get_thres_item(2)  # first element is the Seams
-        all_confs = [x / 100 for x in all_confs]
-
-        all_ious = self.panel_info.get_thres_item(3)
-        all_ious = [x / 100 for x in all_ious]
+        _confs = self.get_all_confidences()
+        _ious = self.get_all_ious()
 
         if not self.folder_path:
             self.error_box('Folder Path', 'Please load a folder with images in BMP or PNG')
@@ -630,7 +643,7 @@ class MainWindow(QMainWindow):
 
         # Actual processing >> sending self._model loaded in the memory instead of the string self.model_path
         t0 = timer()
-        self.inference.process_image(self.classes, self._model, frame, conf=all_confs[0], iou=all_ious[0])
+        self.inference.process_image(self.classes, self._model, frame, conf=_confs, iou=_ious)
         predictions = self.inference.return_predictions()
         t1 = timer()
         self.update_inference_time(t1-t0)

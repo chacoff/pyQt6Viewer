@@ -23,28 +23,28 @@
     </Production>
     <Classes>
         <Seams>
-            <confidence>0.20</confidence>
-            <iou>0.15</iou>
+            <confidence>0.18</confidence>
+            <iou>0.25</iou>
             <color>30;255;30</color>
         </Seams>
         <Beam>
-            <confidence>0.70</confidence>
-            <iou>0.20</iou>
+            <confidence>0.65</confidence>
+            <iou>0.25</iou>
             <color>128;0;255</color>
         </Beam>
         <Souflure>
-            <confidence>0.35</confidence>
-            <iou>0.20</iou>
+            <confidence>0.15</confidence>
+            <iou>0.25</iou>
             <color>255;210;10</color>
         </Souflure>
         <Hole>
-            <confidence>0.35</confidence>
-            <iou>0.20</iou>
+            <confidence>0.01</confidence>
+            <iou>0.25</iou>
             <color>255;0;0</color>
         </Hole>
         <Water>
-            <confidence>0.70</confidence>
-            <iou>0.20</iou>
+            <confidence>0.65</confidence>
+            <iou>0.25</iou>
             <color>0;153;255</color>
         </Water>
     </Classes>

@@ -36,8 +36,8 @@ class Yolov5(ICore):
                  backend: str,
                  weight: any,  # a reference of the loaded model
                  device: str,
-                 conf,
-                 iou,
+                 conf: list,
+                 iou: list,
                  **kwargs: Any) -> None:
         """Initiate Yolov5 Object Detector
 
@@ -153,7 +153,7 @@ class Yolov5(ICore):
                                       original_shape).round()
         return outputs
 
-    def _load_model(self, backend_name: str, weight, device: str, conf: float, iou: float, **kwargs: Any) -> None:
+    def _load_model(self, backend_name: str, weight, device: str, conf: list, iou: list, **kwargs: Any) -> None:
         """Internally loads Model (backend)
 
         Args:

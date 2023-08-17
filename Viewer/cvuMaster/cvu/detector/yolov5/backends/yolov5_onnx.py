@@ -29,7 +29,7 @@ class Yolov5(IModel):
     with/without batch axis.
     """
 
-    def __init__(self, weight, device: str = 'auto', conf: float = 0.20, iou: float = 0.20,) -> None:
+    def __init__(self, weight, device: str = 'auto', conf: list = [], iou: list = [],) -> None:
         """Initiate Model
 
         Args:

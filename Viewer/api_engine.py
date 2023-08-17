@@ -19,14 +19,14 @@ class YoloV5OnnxSeams:
         self.output_image = None
         self.preds = None
 
-    def process_image(self, classes: any, weight: any, input_image: any, conf: float, iou: float):
+    def process_image(self, classes: any, weight: any, input_image: any, conf: list, iou: list):
 
         """
         :param classes: a list with all the classes
         :param weight: a reference of the model since is loaded at the very beginning while starting the app
         :param input_image: a MAT image
-        :param conf: confidence threshold for inference
-        :param iou: iou threshold for NMS
+        :param conf: list of confidence threshold for inference
+        :param iou: list of iou threshold for NMS
         :return: predictions preds contaning bbox, class_name, confidence and instance id
         """
 
