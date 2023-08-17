@@ -46,7 +46,7 @@ def main(_source: str, _annotations_xml: str):
 if __name__ == '__main__':
     # Parameters:
     source1 = f'C:\\Users\\gomezja\\PycharmProjects\\00_dataset\\training'
-    infoscribe = f'C:\\Users\\gomezja\\PycharmProjects\\00_dataset\\_Annotations_Infoscribe\\Lots'
+    infoscribe = f'C:\\Users\\gomezja\\PycharmProjects\\00_dataset\\_Annotations_Infoscribe'
 
     annotations_files = find_xml_files_recursive(infoscribe)
     for xml_path in annotations_files:
