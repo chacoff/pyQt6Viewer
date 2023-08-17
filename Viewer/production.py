@@ -123,11 +123,23 @@ class Process:
                          str(params.get_value('Model', 'device')))
         self.classes: list = params.get_value('Model', 'output_classes').split(',')
         self.classes_to_save: list = params.get_value('Model', 'classes_to_save').split(',')
+        self.classes_names_raw = params.get_classes_colors_thres()
+
+        self.classes_thre: list = []
+        self.classes_iou: list = []
+        for row, (name, color, thre, iou) in enumerate(self.classes_names_raw):
+            self.classes_thre.append(float(str(thre)))
+            self.classes_iou.append(float(str(iou)))
+        self.classes_thre = [x / 100 for x in self.classes_thre]
+        self.classes_iou = [x / 100 for x in self.classes_iou]
+        print(f'Thresholds: {self.classes_thre}\nIOUs: {self.classes_iou}')
+
         self.interest_profiles: list = params.get_value('Production', 'profile_of_interest').split(',')
         self.not_interest_profiles: list = params.get_value('Production', 'profile_not_of_interest').split(',')
         self.inference = YoloV5OnnxSeams()
         self.base_saving_folder: str = str(params.get_value('Production', 'saving_folder'))
         self.save_all_images = ast.literal_eval(params.get_value('Production', 'save_all_images'))
+        print(f'Save all images: {self.save_all_images}')
 
         # current info
         self.current_image_info: Dict[str, Union[str, str, str, int, str, int, int, int]] = {
@@ -167,7 +179,7 @@ class Process:
                     print('%s: Profile of no interest' % self.current_image_info['profile'])
                 else:
                     t0 = timer()
-                    self.inference.process_image(self.classes, self._model, mat_image, conf=0.22, iou=0.15)
+                    self.inference.process_image(self.classes, self._model, mat_image, conf=self.classes_thre, iou=self.classes_iou)
                     predictions = self.inference.return_predictions()
                     t1 = timer()
 
