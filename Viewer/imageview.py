@@ -2,9 +2,10 @@ import cv2
 from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QLabel, QPushButton, QHBoxLayout, \
     QFileDialog, QMainWindow, QSlider, QStatusBar, QGraphicsPixmapItem, QGraphicsItem, QGraphicsRectItem, QGraphicsPolygonItem
 from PyQt6.QtCore import Qt, QPointF, QDir, QSize, pyqtSignal, QFileInfo, QUrl, QRectF
-from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices, QColor, QIcon, QPen, QPolygonF
+from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices, QColor, QIcon, QPen, QPolygonF, QBrush
 import sys
 import numpy as np
+import os
 
 
 class Annotation:
@@ -50,6 +51,7 @@ class ImageView(QGraphicsView):
         self.brightness = 0
         self.rect_items = []
         self.polygon_items = []
+        self.yolo_items = []
 
     def draw_annotations(self, annotations: list):
         """ draw Infoscribe CVAT annotations around the detected defects """
@@ -59,6 +61,9 @@ class ImageView(QGraphicsView):
         for annotation in annotations:
             _points = annotation._points
             _points_array = self.points_to_points_array(_points)
+            _color = annotation._color
+            _r, _g, _b, _ = _color.getRgb()
+            _color_alpha = QColor(_r, _g, _b, 64)
 
             polygon = QPolygonF()
 
@@ -66,12 +71,35 @@ class ImageView(QGraphicsView):
                 polygon.append(QPointF(*p))
 
             item = QGraphicsPolygonItem(polygon)
-            pen = QPen(annotation._color)
+            pen = QPen(_color)
             pen.setWidth(0)
             item.setPen(pen)
 
+            brush = QBrush(_color_alpha)
+            item.setBrush(brush)
+
             self.scene.addItem(item)
             self.polygon_items.append(item)
+
+    def draw_yolo_annotation(self, _folder_path: str, _current_image: str, _current_annotation: str, _colors: list):
+        """ draw yolo annotations exported from infoscribe format """
+
+        self.remove_existing_items()
+
+        with open(os.path.join(_folder_path, _current_annotation), 'r') as file:
+            for _line in file:
+                line = _line.split(' ')
+                _yolov = [float(x) for x in line]
+
+                left, top, right, bottom = self.convert_yolo_to_tlbr(_yolov, self.width, self.height)
+
+                rect_item = QGraphicsRectItem(QRectF(QPointF(top, left), QPointF(bottom, right)))
+                pen = QPen(_colors[int(_yolov[0])])
+                pen.setWidth(0)
+                rect_item.setPen(pen)
+
+                self.scene.addItem(rect_item)
+                self.yolo_items.append(rect_item)
 
     def draw_boxes_and_labels(self, predictions, colors):
         """ draw bounding boxes around the detected defects """
@@ -103,6 +131,10 @@ class ImageView(QGraphicsView):
         for item in self.polygon_items:
             self.scene.removeItem(item)
         self.polygon_items = []
+
+        for item in self.yolo_items:
+            self.scene.removeItem(item)
+        self.yolo_items = []
 
     def show_hide_items(self, _visible: bool):
 
@@ -191,5 +223,23 @@ class ImageView(QGraphicsView):
         points_array = np.array(points_array)
 
         return points_array
+
+    @staticmethod
+    def convert_yolo_to_tlbr(yolo_annotation: list, image_width: int, image_height: int) -> tuple:
+        """ convert from YOLO format to standard BBox in order to draw it with qt"""
+        class_id, x_center, y_center, width, height = yolo_annotation
+
+        x_center = x_center * image_width
+        y_center = y_center * image_height
+        width = width * image_width
+        height = height * image_height
+
+        top = y_center - height / 2
+        left = x_center - width / 2
+        bottom = y_center + height / 2
+        right = x_center + width / 2
+
+        return top, left, bottom, right
+
 
 

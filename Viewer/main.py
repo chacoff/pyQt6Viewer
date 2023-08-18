@@ -2,7 +2,7 @@ import abc
 import os
 import cv2
 from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QLabel, QPushButton, \
-    QHBoxLayout, QFileDialog, QMainWindow, QSlider, QStatusBar, QMessageBox, QGridLayout, QDialog, QCheckBox
+    QHBoxLayout, QFileDialog, QMainWindow, QSlider, QStatusBar, QMessageBox, QGridLayout, QDialog, QCheckBox, QComboBox
 from PyQt6.QtCore import Qt, QPointF, QDir, QSize, pyqtSignal, QFileInfo, QUrl
 from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices, QColor, QIcon
 import sys
@@ -313,8 +313,10 @@ class MainWindow(QMainWindow):
         i_block.setLayout(image_block)
 
         # big add-on
-        annotations_checkbox = QCheckBox("Annotations Mode")
-        annotations_checkbox.stateChanged.connect(self.toggle_toolbar)
+        annotations_checkbox = QComboBox()
+        annotations_checkbox.addItems(['Processing mode', 'Segmentation annotations', 'YoloV5 annotations'])
+        annotations_checkbox.currentIndexChanged.connect(self.selection_change)
+        self.mode = 0
         # big add-on
 
         image_view_layout.addWidget(b_block, 0)  # self.brightness_slider
@@ -341,8 +343,19 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(w)
         self.statusBar().showMessage('Ready')
 
-    def toggle_toolbar(self, state):
-        if state == 2:  # Qt.CheckState.Checked
+    def selection_change(self, state: int) -> None:
+        if state == 1:  # state=1 is annotations segmentation
+            self.toggle_toolbar(annotations=True)
+            self.mode = 1
+        elif state == 2:  # state=2 is yolo bbox
+            self.toggle_toolbar(annotations=True)
+            self.mode = 2
+        else:
+            self.toggle_toolbar(annotations=False)
+            self.mode = 0
+
+    def toggle_toolbar(self, annotations: bool):
+        if annotations:  # Qt.CheckState.Checked
             self.annotations_action.setDisabled(False)
             self.hide_annotations_action.setDisabled(False)
             self.model_action.setDisabled(True)
@@ -367,6 +380,9 @@ class MainWindow(QMainWindow):
 
     def _load_annotations(self) -> None:
 
+        if self.folder_path is None:
+            return
+
         def classes_encoder(_label) -> int:
 
             classes_encoding: dict = {
@@ -378,24 +394,34 @@ class MainWindow(QMainWindow):
             }
             return classes_encoding[_label]
 
-        root = ET.parse(f'{self.folder_path}\\annotations.xml').getroot()
-        meta = root.findall("image")
+        if self.mode == 1:
+            root = ET.parse(f'{self.folder_path}\\annotations.xml').getroot()
+            meta = root.findall("image")
 
-        self.annotation_list = []
-        for _image in meta:
-            _name: str = str(_image.attrib["name"])
+            self.annotation_list = []
+            for _image in meta:
+                _name: str = str(_image.attrib["name"])
 
-            if _name == self.current_image_name:
-                object_metas = _image.findall("polygon")
+                if _name == self.current_image_name:
+                    object_metas = _image.findall("polygon")
 
-                for bbox in object_metas:
-                    label = bbox.attrib['label']
-                    points = bbox.attrib['points'].split(';')
-                    annotation = Annotation(points, label, self.classes_color[classes_encoder(label)])
-                    self.annotation_list.append(annotation)
+                    for bbox in object_metas:
+                        label = bbox.attrib['label']
+                        points = bbox.attrib['points'].split(';')
+                        annotation = Annotation(points, label, self.classes_color[classes_encoder(label)])
+                        self.annotation_list.append(annotation)
 
-        self.hide_annotations_action.setChecked(True)
-        self.panel_view.draw_annotations(self.annotation_list)
+            self.hide_annotations_action.setChecked(True)
+            self.panel_view.draw_annotations(self.annotation_list)
+
+        elif self.mode == 2:
+            _yolo_annotation = os.path.splitext(self.current_image_name)[0]+'.txt'
+            self.panel_view.draw_yolo_annotation(self.folder_path,
+                                                 self.current_image_name,
+                                                 _yolo_annotation,
+                                                 self.classes_color)
+        else:
+            pass
 
     def _toggle_annotations(self, checked: bool) -> None:
         if not self.annotation_list:
