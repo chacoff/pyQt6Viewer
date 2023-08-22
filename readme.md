@@ -70,7 +70,7 @@ START python production.py
 
 Databases:
 
-H-engine is population a MI database with the following credentials:
+H-engine is populating a MI database with the following credentials:
 
 ```python
 db = SEAMS_INFO(
