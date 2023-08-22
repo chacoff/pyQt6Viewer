@@ -16,6 +16,8 @@ The repository is organized as follows:
 - `Training/`: all the python scripts for training, this is a clone from the original Yolov5 from ultralytics
 - - `ManifestGenerator.py`: in-house addition to Yolov5 in order to generate the yaml file needed by Yolo describing the dataset and classes
 - `Viewer/`: all the code to run *H-Beam Processor* and *H-engine* in production
+- - `main.py`: entry point to H-Beam Processor.
+- - `production.py`: made to be run in production, with functionalities to populate databases and record image with defects but there is no interface, it is a console application.
 
 The following diagram shows the interaction between *H-Beam Processor* and *H-engine in Production*:
 
@@ -29,6 +31,7 @@ This application is designed for testing the models after training. It also supp
 
 ### H-engine for production
 
+Console application using the same engine for inference as H-Beam Processor but made for production. It interacts with MSC via socket communication. It receives images capture by MSC and process them with the engine and later one classify the image according its predictions.
 
 
 ## Getting Started
@@ -37,9 +40,9 @@ To begin using the tools provided in this repository, follow these steps:
 
 1. Clone the repository to your local machine.
 
-2. Execute Viewer/main.py to start H-Beam processor. Alternative you could start the application by executing Viewer/HBeamProcessor.bat but you might need to configure the location of your python enviroment.
+2. Execute Viewer/main.py to start H-Beam processor. Alternative you could start the application by executing Viewer/HBeamProcessor.bat but you might need to configure the location of your python environment.
 
-3. Execute Viewer/production.py. Alternative you could start the application by executing Viewer/HBeamProcessor.bat but you might need to configure the location of your python enviroment.
+3. Execute Viewer/production.py. Alternative you could start the application by executing Viewer/HBeamProcessor.bat but you might need to configure the location of your python environment.
 
 Example of `production.bat` to start up the H-engine in production mode:
 
