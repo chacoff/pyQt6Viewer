@@ -19,6 +19,8 @@ The repository is organized as follows:
 - - `main.py`: entry point to H-Beam Processor.
 - - `production.py`: made to be run in production, with functionalities to populate databases and record image with defects but there is no interface, it is a console application.
 
+### Flowchart
+
 The following diagram shows the interaction between *H-Beam Processor* and *H-engine in Production*:
 
 ![H-Beam processor and Viewer](_readme/hengine_flow.drawio.png)
@@ -61,81 +63,41 @@ START python production.py
 @echo ON
 ```
 
-## Database Credentials
+## Database Credential
 
 Databases:
 
-For the `trucks` database:
+H-engine is population a MI database with the following credentials:
 
 ```python
-trucks = SDMExtraction(
-    host='8CC1340PY2',      # where the database is stored
-    port=3306,              # port
-    user='trucks',          # user
-    pwd='Trucks2023.',      # user password
-    db='truckdensity',      # name of the database
-    path='data',            # folder to save extracted data
-    prefix='Trucks',        # prefix for extracted files
-    code='CODE_PROD',       # column name for production code
-    flag='Trucks'           # Rails or Trucks >> according the extraction you need
+db = SEAMS_INFO(
+    source='AZR-SQL-MIAUT',
+    user='SEAMS-DETECT_Publisher',
+    pwd='AMseams2023Q3',  # attention!, it expires every 3 month
+    catalog='SEAMS_DETECTIONS'
 )
 ```
 
-For the `rails` database:
-
-```python
-rails = SDMExtraction(
-    host='8CC12827T8',        # where the database is stored
-    port=3306,                # port
-    user='rails',             # user
-    pwd='Rails2023.',         # user password
-    db='raildensity',         # name of the database
-    path='data',              # folder to save extracted data
-    prefix='Rails',           # prefix for extracted files
-    code='CODPROP1',          # column name for production code
-    flag='Rails'              # Rails or Trucks >> according the extraction you need
-)
-```
-
-The databases, Trucks and Rails, are both hosted as local MySQL databases and are accessed using the following credentials:
-
+The database is a SQL SERVER, the recommended library is MSOLEDBSQL.
 
 ## Computers Credentials
 
 ### New and currently working computers:
 
-| PC type         | PC Name    | IP Address    | User                 | Password       |
-|-----------------|------------|---------------|----------------------|----------------|
-| Trucks SDM-di   | 8CC1340PY2 | 10.25.104.87  | EUROPE\AMLPLSCRAP    | AM@acierie01*  |
-| Rails SDM-di    | 8CC12827T8 | 10.25.110.201 | EUROPE\AMLPLSCRAP    | AM@acierie01*  |
-| Differdange SSM | 8CC1482L6B | DHCP          | EUROPE\AMLPLSCRAP    | AM@acierie01*  |
-| Belval SSM      | 8CC0460KW8 | 10.28.101.97  | profilarbed\gracsoft | AM@acierie01*  |
-| Delphi PC       | 8CC3141STT | DHCP          | EUROPE\AMLPLSCRAP    | AM@acierie01*  |
+| PC type              | PC Name       | IP Address    | User             | Password    |
+|----------------------|---------------|---------------|------------------|-------------|
+| Seams production PC  | DESKTOP-seams | 10.28.100.15  | .\arcelormittal  | Arcelor**   |
+| Seams Station at AOB | CZC8317B48    | 10.26.100.218 | EUROPE\GRACRAOB  | AM@grd2018* |
 
-- Differdange SSM is still under development, the software is not completely revamped. Currently, at Jaime's office.
+### CVAT
 
-- Delphi PC is an Elite desktop HP with Delphi 10.4 installed in order to modify the delphi applications. Currently, at Jaime's office.
+The application used by Infoscribe for making annotations is installed on the Seams Station:
 
-### Old computers:
-
-| PC type         | Status                               | PC Name                       | User                  | Password      |
-|-----------------|--------------------------------------|-------------------------------|-----------------------|---------------|
-| Trucks SDM      | in Differdange, still in the network | W09321                        | profilarbed\DIACSDM   | AMdipwd**     |
-| Rails SDM       | Jaime's office, down in a shelf      | W08994                        | W08994\Admin          | 1Qlari-fari   |
-| Differdange SSM | an Azure VM  and running in prod!    | VMDiscr01-SSM (139.53.211.76) | profilarbed\gracsoft  | AM@acierie01* |
-| Belval SSM      | Lost between IP and Belval           | CZC4194DP6                    | profilarbed\gracsoft  | AM@acierie01* |
-
-## Flowcharts
-
-### SDM Differdange
-
-Trucks and Rails are retrieving SAP data by querying an FTP listing for each incoming truck and wagon-rail.
-
-![SDM device flow](_readme/SDM_flow.png)
-
-### SSM Belval
-
-![SDM device flow](_readme/SSM_belval.png)
+```python
+host='http://czc8317b48:8080/'
+user='aob'
+pw='aob2023'
+```
 
 ## Feedback and Support
 
