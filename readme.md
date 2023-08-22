@@ -18,7 +18,7 @@ The repository is organized as follows:
 - `ShadowStarter/`: C# application to keep alive MSC and H-engine running in production.
 - `Training/`: all the python scripts for training, this is a clone from the original Yolov5 from ultralytics.
 - - `ManifestGenerator.py`: in-house addition to Yolov5 in order to generate the yaml file needed by Yolo describing the dataset and classes.
-- `Viewer/`: all the code to run *H-Beam Processor* and *H-engine* in production.
+- `Viewer/`: all the python code to run *H-Beam Processor* and *H-engine* in production.
 - - `main.py`: entry point to H-Beam Processor.
 - - `production.py`: made to be run in production, with functionalities to populate databases and record image with defects but there is no interface, it is a console application.
 
