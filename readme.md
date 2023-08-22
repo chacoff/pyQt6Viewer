@@ -85,7 +85,7 @@ The database is a SQL SERVER, the recommended library is MSOLEDBSQL.
 
 ## Computers Credentials
 
-### New and currently working computers:
+### Currently working computers:
 
 | PC type              | PC Name       | IP Address    | User             | Password    |
 |----------------------|---------------|---------------|------------------|-------------|
