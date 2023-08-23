@@ -38,6 +38,8 @@ This application is designed for testing the models after training. It also supp
 
 Console application using the same engine for inference as H-Beam Processor but made for production. It interacts with MSC via socket communication. It receives images capture by MSC and process them with the engine and later one classify the image according its predictions.
 
+![H-engine for production](_readme/engineconsole.png)
+
 
 ## Getting Started
 
