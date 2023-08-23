@@ -17,6 +17,7 @@ import os
 import ast
 import time
 os.system('')  # to enable ANSI
+os.system('title Seams-Engine v0.9.9 - RD-Esch')
 
 
 class Buffer:
