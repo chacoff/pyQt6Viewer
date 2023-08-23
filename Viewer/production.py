@@ -16,6 +16,7 @@ import copy
 import os
 import ast
 import time
+os.system('')  # to enable ANSI
 
 
 class Buffer:
@@ -67,7 +68,7 @@ class TCP:
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.bind((self._host, self._port))
         self._socket.listen(1)
-        print("Server listening on {}:{}".format(self._host, self._port))
+        print(f'{Bcolors.cyan}Server listening on: {Bcolors.endc}{self._host}:{self._port}')
 
         while self.is_running:
             try:
@@ -87,7 +88,7 @@ class TCP:
                         break
 
                     if len(self.data) != self.buffer_size:
-                        print(f'data is not completed: {len(self.data)} < {self.buffer_size}')
+                        print(f'{Bcolors.error}data is not completed: {len(self.data)} < {self.buffer_size}{Bcolors.endc}')
                         continue
 
                     # print(f'Data received and queued - Message total size: {len(self.data)}')
@@ -100,11 +101,12 @@ class TCP:
 
     def on_connect(self, peer) -> None:
         self.is_running = True
-        print(f"MSC connected: {peer}")
+        print(f'{Bcolors.cyan}MSC connected:{Bcolors.endc} {peer}')
 
-    def on_disconnect(self) -> None:
+    @staticmethod
+    def on_disconnect() -> None:
         # self.is_running = False
-        print("MSC disconnected")
+        print(f'{Bcolors.error}MSC disconnected{Bcolors.endc}')
 
     def on_close(self) -> None:
         if self._socket is not None:
@@ -133,14 +135,15 @@ class Process:
             self.classes_iou.append(float(str(iou)))
         self.classes_thre = [x / 100 for x in self.classes_thre]
         self.classes_iou = [x / 100 for x in self.classes_iou]
-        print(f'Thresholds: {self.classes_thre}\nIOUs: {self.classes_iou}')
+        print(f'Thresholds: {self.classes_thre}\n'
+              f'IOUs: {self.classes_iou}')
 
         self.interest_profiles: list = params.get_value('Production', 'profile_of_interest').split(',')
         self.not_interest_profiles: list = params.get_value('Production', 'profile_not_of_interest').split(',')
         self.inference = YoloV5OnnxSeams()
         self.base_saving_folder: str = str(params.get_value('Production', 'saving_folder'))
         self.save_all_images = ast.literal_eval(params.get_value('Production', 'save_all_images'))
-        print(f'Save all images: {self.save_all_images}')
+        print(f'Save all images: {Bcolors.green}{self.save_all_images}{Bcolors.endc}')
 
         # current info
         self.current_image_info: Dict[str, Union[str, str, str, int, str, int, int, int]] = {
@@ -209,7 +212,8 @@ class Process:
                 # nothing to dequeue is either because the software started or a beam already passed
                 if self.current_image_info['n_images'] != 0 and self.current_image_info['n_images'] > 16:
                     self.db_update()  # updates database, if n_images is not zero, means a beam already was processed
-                    print(f'\n<< DB Updated: {self.current_image_info.get("profile")}_{self.current_image_info.get("campaign")}_{self.current_image_info.get("beam_id")} -- '
+                    print(f'\n{Bcolors.header}<< {Bcolors.endc}DB Updated: {self.current_image_info.get("profile")}_'
+                          f'{self.current_image_info.get("campaign")}_{self.current_image_info.get("beam_id")} -- '
                           f'n_images: {self.current_image_info.get("n_images")} - '
                           f'seams: {self.current_image_info.get("Seams")} - '
                           f'hole: {self.current_image_info.get("Hole")} at '
@@ -303,7 +307,7 @@ class Process:
 
         if self.current_image_info['beam_id'] == self.last_beam_id:
 
-            to_console = f'  current: {self.current_image_info.get("profile")}_' \
+            to_console = f'{Bcolors.warning}-- {Bcolors.endc}current: {self.current_image_info.get("profile")}_' \
                          f'{self.current_image_info.get("campaign")}_' \
                          f'{self.current_image_info.get("beam_id")} -- ' \
                          f'{msg} - ' \
@@ -313,7 +317,8 @@ class Process:
             Printer(to_console)  # to use stdout instead of print
         else:
             self.last_beam_id = self.current_image_info['beam_id']
-            print(f'\n>> Insert: {self.current_image_info.get("profile")}_{self.current_image_info.get("campaign")}_{self.current_image_info.get("beam_id")} -- '
+            print(f'{Bcolors.header}>> {Bcolors.endc}Insert: {self.current_image_info.get("profile")}'
+                  f'_{self.current_image_info.get("campaign")}_{self.current_image_info.get("beam_id")} -- '
                   f'{msg} - '
                   f'n_images: {self.current_image_info.get("n_images")} - '
                   f'seams: {self.current_image_info.get("Seams")} - '
@@ -463,8 +468,21 @@ class SavingImages:
 class Printer:
     """ Print strings to stdout on one line dynamically """
     def __init__(self, data: str):
-        sys.stdout.write("\r "+data.__str__())
+        sys.stdout.write("\r"+data.__str__())
         sys.stdout.flush()
+
+
+class Bcolors:
+    """ class colors for highlight printing """
+    header = '\033[95m'
+    blue = '\033[94m'
+    cyan = '\033[96m'
+    green = '\033[92m'
+    warning = '\033[93m'
+    error = '\033[91m'
+    endc = '\033[0m'
+    bold = '\033[1m'
+    underline = '\033[4m'
 
 
 def main():
