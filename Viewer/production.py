@@ -2,6 +2,7 @@ from collections import deque
 from threading import Lock, Thread
 import socket
 import sys
+from sys import stdout
 from typing import Dict, Union
 import cv2
 import numpy as np
@@ -206,9 +207,9 @@ class Process:
 
             except IndexError:
                 # nothing to dequeue is either because the software started or a beam already passed
-                if self.current_image_info['n_images'] != 0:
+                if self.current_image_info['n_images'] != 0 and self.current_image_info['n_images'] > 16:
                     self.db_update()  # updates database, if n_images is not zero, means a beam already was processed
-                    print(f'>> DB Updated: {self.current_image_info.get("profile")}_{self.current_image_info.get("campaign")}_{self.current_image_info.get("beam_id")} -- '
+                    print(f'\n<< DB Updated: {self.current_image_info.get("profile")}_{self.current_image_info.get("campaign")}_{self.current_image_info.get("beam_id")} -- '
                           f'n_images: {self.current_image_info.get("n_images")} - '
                           f'seams: {self.current_image_info.get("Seams")} - '
                           f'hole: {self.current_image_info.get("Hole")} at '
@@ -301,14 +302,18 @@ class Process:
         """ it recognizes if a new entry gotta be inserted or if we are still processing the same beam """
 
         if self.current_image_info['beam_id'] == self.last_beam_id:
-            print(f'Update: {self.current_image_info.get("profile")}_{self.current_image_info.get("campaign")}_{self.current_image_info.get("beam_id")} -- '
-                  f'{msg} - '
-                  f'n_images: {self.current_image_info.get("n_images")} - '
-                  f'seams: {self.current_image_info.get("Seams")} - '
-                  f'hole: {self.current_image_info.get("Hole")}')
+
+            to_console = f'  current: {self.current_image_info.get("profile")}_' \
+                         f'{self.current_image_info.get("campaign")}_' \
+                         f'{self.current_image_info.get("beam_id")} -- ' \
+                         f'{msg} - ' \
+                         f'n_images: {self.current_image_info.get("n_images")} - ' \
+                         f'seams: {self.current_image_info.get("Seams")} - ' \
+                         f'hole: {self.current_image_info.get("Hole")}'
+            Printer(to_console)  # to use stdout instead of print
         else:
             self.last_beam_id = self.current_image_info['beam_id']
-            print(f'>> Insert: {self.current_image_info.get("profile")}_{self.current_image_info.get("campaign")}_{self.current_image_info.get("beam_id")} -- '
+            print(f'\n>> Insert: {self.current_image_info.get("profile")}_{self.current_image_info.get("campaign")}_{self.current_image_info.get("beam_id")} -- '
                   f'{msg} - '
                   f'n_images: {self.current_image_info.get("n_images")} - '
                   f'seams: {self.current_image_info.get("Seams")} - '
@@ -453,6 +458,13 @@ class SavingImages:
             except IndexError:
                 # nothing to save
                 time.sleep(0.100)
+
+
+class Printer:
+    """ Print strings to stdout on one line dynamically """
+    def __init__(self, data: str):
+        sys.stdout.write("\r "+data.__str__())
+        sys.stdout.flush()
 
 
 def main():
