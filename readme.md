@@ -94,7 +94,7 @@ The database is a SQL SERVER, the recommended library is MSOLEDBSQL.
 | Seams Station at AOB | CZC8317B48    | 10.26.100.218 | EUROPE\GRACRAOB  | AM@grd2018* |
 
 
-## Training
+## Training the network
 
 ### Seams station
 
@@ -108,7 +108,7 @@ user='aob'
 pw='aob2023'
 ```
 
-## Deployment
+## Production Deployment
 
 To deploy *H-engine*, in the Seams production PC, start by copying your environment in:
 
@@ -128,6 +128,10 @@ source seams/bin/activate         # activate your environment
 ![H-engine for production](_readme/folders.png)
 
 where env/ is the environment with all the python packages and H_Processor/ is all the content from the folder Viewer/ of this repository.
+
+it is recommended to include the path in Windows *environment variables*:
+
+![environment variables](_readme/variables.png)
 
 ## Feedback and Support
 
