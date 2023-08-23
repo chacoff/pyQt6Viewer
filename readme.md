@@ -40,7 +40,6 @@ Console application using the same engine for inference as H-Beam Processor but 
 
 ![H-engine for production](_readme/engineconsole.png)
 
-
 ## Getting Started
 
 To begin using the tools provided in this repository, follow these steps:
@@ -103,6 +102,27 @@ host='http://czc8317b48:8080/'
 user='aob'
 pw='aob2023'
 ```
+
+## Deployment
+
+To deploy *H-engine*, in the Seams production PC, start by copying your environment in:
+
+```
+D:\__TMB_SeamsReleases
+```
+
+the current environment in the Seams production PC was build with conda pack:
+
+```bash
+conda pack -n seams               # pack your environment
+tar -xzf my_env.tar.gz -C seams   # unpack your environment
+source seams/bin/activate         # activate your environment
+```
+ __TMB_SeamsRelease/ looks something like this:
+
+![H-engine for production](_readme/folders.png)
+
+where env/ is the environment with all the python packages and H_Processor/ is all the content from the folder Viewer/ of this repository.
 
 ## Feedback and Support
 
