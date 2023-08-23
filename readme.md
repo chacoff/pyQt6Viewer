@@ -93,7 +93,12 @@ The database is a SQL SERVER, the recommended library is MSOLEDBSQL.
 | Seams production PC  | DESKTOP-seams | 10.28.100.15  | .\arcelormittal  | Arcelor**   |
 | Seams Station at AOB | CZC8317B48    | 10.26.100.218 | EUROPE\GRACRAOB  | AM@grd2018* |
 
-### CVAT
+
+## Training
+
+### Seams station
+
+### CVAT: annotations
 
 The application used by Infoscribe for making annotations is installed on the Seams Station:
 
