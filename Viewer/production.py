@@ -181,7 +181,10 @@ class Process:
                 mat_image, mat_org = self.decode_payload(data, self.header_size, debug=False)
 
                 if str(self.current_image_info['profile']) in self.not_interest_profiles:
-                    print('%s: Profile of no interest' % self.current_image_info['profile'])
+                    # print('%s: Profile of no interest' % self.current_image_info['profile'])
+                    msg_to_console = f'{Bcolors.warning}{self.current_image_info["profile"]}{Bcolors.endc}' \
+                                 f'Profile of no interest'
+                    Printer(msg_to_console)  # to use stdout instead of print
                 else:
                     t0 = timer()
                     self.inference.process_image(self.classes, self._model, mat_image, conf=self.classes_thre, iou=self.classes_iou)
