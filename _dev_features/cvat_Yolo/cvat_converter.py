@@ -49,6 +49,7 @@ class CVATYoloConverter:
                     yolo_h = round((ybr - ytl) / image_height, 6)
 
                     payload = [full_image_name, f'{self.label} {yolo_x} {yolo_y} {yolo_w} {yolo_h}']
+                    print(f' >> {payload}')
                     self.write_annotations_to_disk(payload)
 
     def classes_encoder(self, label) -> int:
@@ -81,7 +82,7 @@ class CVATYoloConverter:
     def write_annotations_to_disk(payload: list) -> None:
         annotation_name: str = f'{payload[0].split(".")[0]}.txt'
         annotation_string: str = payload[1]
-        
+
         # with open(annotation_name, 'a') as f:
         #     f.write(f'{annotation_string}\n')
 

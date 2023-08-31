@@ -5,6 +5,7 @@ J.
 """
 
 import os
+import re
 import pandas as pd
 from tqdm import tqdm
 import yaml
@@ -14,27 +15,50 @@ from numpy.random import randint
 import shutil
 
 
+def natural_sort_key(s):
+    return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
+
+
 def manifest_generator(param):
 
-    total_lists = []
-    for clas in param.get('folder_class'):
-        path = os.path.join(param.get('base'), clas)
-        list_per_folder = [x for x in os.listdir(path) if x.endswith(param.get('image_filter'))]
-        complete_list = [clas+'\\' + x for x in list_per_folder]
-        total_lists.append(complete_list)
+    total_lists: list = []
+    png_count: int = 0
+    bmp_count: int = 0
+    xml_count: int = 0
+    txt_count: int = 0
 
-    images_name = sum(total_lists, [])
+    for root, dirs, files in os.walk(param.get('base')):
+        dirs.sort(key=natural_sort_key)  # Sort subfolders naturally
+        for dir_name in dirs:
+            if dir_name.startswith("Lot_"):
+                lot_folder_path = os.path.join(root, dir_name)
+                for file in os.listdir(lot_folder_path):
+                    if file.endswith('.png'):
+                        png_count += 1
+                        total_lists.append(os.path.join(dir_name, file))
+                    elif file.endswith('.bmp'):
+                        bmp_count += 1
+                        total_lists.append(os.path.join(dir_name, file))
+                    elif file.endswith('.xml'):
+                        xml_count += 1
+                    elif file.endswith('.txt'):
+                        txt_count += 1
+
+    print(f'> Images: {bmp_count + png_count}')
+    print(f'> Annotations *.txt: {txt_count}')
+    print(f'> Annotations *.xml: {xml_count}')
+
     manifest = os.path.join(param.get('base'), param.get('manifest'))
 
-    pbar = tqdm(total=len(images_name))
-    for i in range(len(images_name)):
+    pbar = tqdm(total=len(total_lists))
+    for i in range(len(total_lists)):
         file = open(manifest, 'a+')
-        image_i = str(os.path.join(param.get('base'), images_name[i]))
+        image_i = str(os.path.join(param.get('base'), total_lists[i]))
         file.write(image_i+'\n')
         file.close()
         pbar.update(1)
     pbar.close()
-    print('INFO: Total number of images: %s' % len(images_name))
+    print('INFO: Total number of images: %s' % len(total_lists))
 
 
 def split_manifest(param):
@@ -115,7 +139,7 @@ def mover(param):
 
 if __name__ == "__main__":
     parameters = {
-        'base': 'F:\\00_Seams\\dataset',
+        'base': 'C:\\Users\\gomezja\\PycharmProjects\\00_dataset\\training',
         'folder_class': ['Seams', 'Hole'],
         'destination': 'Reference',
         'manifest': 'manifest.txt',
