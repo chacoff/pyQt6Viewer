@@ -146,7 +146,7 @@ if __name__ == "__main__":
         'manifest_training': 'training.txt',
         'image_filter': '.bmp',
         'annotation_filter': '.txt',
-        'split': 0.20,
+        'split': 0.25,
         'classes': ['Seams', 'Beam', 'Souflure', 'Hole', 'Water'],
         'yml': 'seams.yaml'
     }

@@ -448,7 +448,7 @@ def parse_opt(known=False):
     parser.add_argument('--epochs', type=int, default=71, help='total training epochs')
     parser.add_argument('--batch-size', type=int, default=32, help='total batch size for all GPUs, -1 for autobatch')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=768, help='train, val image size (pixels)')
-    parser.add_argument('--name', default='exp7', help='save to project/name')
+    parser.add_argument('--name', default='exp9', help='save to project/name')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
