@@ -1,3 +1,0 @@
-exp2 -> working in production since mid july, trained with 1600 images
-exp6 -> never in production, also trained with 1600images
-exp7 -> trained with 11K images

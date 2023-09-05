@@ -1,0 +1,5 @@
+Nano version -> never tested in production only locally and trained with 1600 images
+exp2 -> working in production since mid july, trained with 1600 images
+exp6 -> never in production, also trained with 1600images. Git track stopped.
+exp7 -> trained with 11K images. Git track stopped.
+exp9 -> trained with 11K images and different hyperparameters, it works better than exp7. still weak at holes
