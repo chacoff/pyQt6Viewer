@@ -10,7 +10,7 @@
         <default_model>./src</default_model>
     </Viewer>
     <Model>
-        <model_path>./src/best_exp2_Small_v2_768_5c.onnx</model_path>
+        <model_path>./src/best_exp10_Small_v2_768_5c.onnx</model_path>
         <output_classes>Seams,Beam,Souflure,Hole,Water</output_classes>
         <classes_to_save>Seams,Hole,Souflure</classes_to_save>
         <device>cpu</device>
@@ -23,7 +23,7 @@
     </Production>
     <Classes>
         <Seams>
-            <confidence>0.18</confidence>
+            <confidence>0.20</confidence>
             <iou>0.25</iou>
             <color>30;255;30</color>
         </Seams>
@@ -33,7 +33,7 @@
             <color>128;0;255</color>
         </Beam>
         <Souflure>
-            <confidence>0.15</confidence>
+            <confidence>0.35</confidence>
             <iou>0.25</iou>
             <color>255;210;10</color>
         </Souflure>

@@ -317,7 +317,7 @@ class Process:
                          f'{msg} - ' \
                          f'n_images: {self.current_image_info.get("n_images")} - ' \
                          f'seams: {self.current_image_info.get("Seams")} - ' \
-                         f'hole: {self.current_image_info.get("Hole")}'
+                         f'hole: {self.current_image_info.get("Hole")}   '
             Printer(to_console)  # to use stdout instead of print
         else:
             self.last_beam_id = self.current_image_info['beam_id']
