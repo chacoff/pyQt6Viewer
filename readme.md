@@ -15,7 +15,6 @@ The repository is organized as follows:
 - - `cvat_Yolo/cvat_LotCreation.py`: generate Lots of images from the dataset to mimic the same structure as *Infoscribe*. it places inside every Lot approximately 20 images and the file *annotations.xml*, which is the CVAT format for polygon annotations.
 - - `cvat_Yolo/cvat_pacifier.py`: checks that there are no images/annotations lost.
 - - `cvat_Yolo/cvat_converter`: converts from CVAT annotations in polygons format to Yolo format.
-- `ShadowStarter/`: C# application to keep alive MSC and H-engine running in production.
 - `Training/`: all the python scripts for training, this is a clone from the original Yolov5 from ultralytics.
 - - `ManifestGenerator.py`: in-house addition to Yolov5 in order to generate the yaml file needed by Yolo describing the dataset and classes.
 - `Viewer/`: all the python code to run *H-Beam Processor* and *H-engine* in production.
