@@ -30,15 +30,11 @@ class ImageInfo(QWidget):
         self.class_plot = ClassificationPlot()
         self.class_plot.setup_plot()
 
-        image_logo = QLabel()
-        image_logo.setPixmap(QPixmap.fromImage(QImage("includes/logoAM.png")))
-
         layout = QVBoxLayout()
         layout.addWidget(self.table, 2)
         layout.addWidget(self.stats.plot_widget, 2)
         layout.addWidget(self.class_plot.plot_widget, 2)
         layout.addStretch(1)
-        # layout.addWidget(image_logo, 1, alignment=Qt.AlignmentFlag.AlignCenter)
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.setLayout(layout)

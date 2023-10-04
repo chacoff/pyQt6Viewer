@@ -2,7 +2,8 @@ import abc
 import os
 import cv2
 from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QLabel, QPushButton, \
-    QHBoxLayout, QFileDialog, QMainWindow, QSlider, QStatusBar, QMessageBox, QGridLayout, QDialog, QCheckBox, QComboBox
+    QHBoxLayout, QFileDialog, QMainWindow, QSlider, QStatusBar, QMessageBox, QGridLayout, QDialog, QCheckBox, QComboBox, \
+    QSizePolicy
 from PyQt6.QtCore import Qt, QPointF, QDir, QSize, pyqtSignal, QFileInfo, QUrl
 from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices, QColor, QIcon
 import sys
@@ -269,6 +270,16 @@ class MainWindow(QMainWindow):
 
         header = QGridLayout()
 
+        am_label = QLabel()
+        am_logo = QPixmap('includes/logoAM.png')
+        label_size = self.model_name.sizeHint()
+        scaled_pixmap = am_logo.scaled(90, 42,  # label_size
+                                       Qt.AspectRatioMode.KeepAspectRatio,
+                                       transformMode=Qt.TransformationMode.SmoothTransformation)
+
+        am_label.setPixmap(scaled_pixmap)
+        am_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
+
         # header
         header.addWidget(self.model_name, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
         header.addWidget(self.inference_time, 1, 0, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -278,6 +289,8 @@ class MainWindow(QMainWindow):
 
         header.addWidget(self.model_prediction_label, 0, 2, alignment=Qt.AlignmentFlag.AlignLeft)
         header.addWidget(self.ground_truth_label, 1, 2, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        header.addWidget(am_label, 0, 3, 2, 1, alignment=Qt.AlignmentFlag.AlignRight)
 
         main_vertical_layout.addItem(header)
 
