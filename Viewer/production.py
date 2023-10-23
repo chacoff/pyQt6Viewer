@@ -171,7 +171,7 @@ class Process:
             self.cursor = self.conn.cursor()
             print(f'Seams DB: {Bcolors.green}Ok!{Bcolors.endc}')
         except pyodbc.InterfaceError as e:
-            print(f'error connexting to ODBC: {e}', file=sys.stderr)
+            print(f'error connecting to Seams ODBC: {e}', file=sys.stderr)
             sys.exit()
 
     def start(self):
