@@ -164,11 +164,15 @@ class Process:
                            'SERVER=AZR-SQL-MIAUT;' \
                            'DATABASE=SEAMS_DETECTIONS;' \
                            'UID=SEAMS-DETECT_Publisher;' \
-                           'PWD=AMseams2023Q3'
+                           'PWD=AMseams2023q4'
 
-        self.conn = pyodbc.connect(self.conn_string)
-
-        self.cursor = self.conn.cursor()
+        try:
+            self.conn = pyodbc.connect(self.conn_string)
+            self.cursor = self.conn.cursor()
+            print(f'Seams DB: {Bcolors.green}Ok!{Bcolors.endc}')
+        except pyodbc.InterfaceError as e:
+            print(f'error connexting to ODBC: {e}', file=sys.stderr)
+            sys.exit()
 
     def start(self):
         self._thread.start()
