@@ -9,3 +9,4 @@ exp12 -> back to small and stopped in the middle of training
 exp13 -> not tested model
 
 October 04 - exp2 back to production because is better gathering holes than exp10.
+exp14 -> first model detecting a bit better holes in terms of size, less under detections but still lot of over detections
