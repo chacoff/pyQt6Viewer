@@ -76,7 +76,7 @@ H-engine is populating a MI database with the following credentials:
 db = SEAMS_INFO(
     source='AZR-SQL-MIAUT',
     user='SEAMS-DETECT_Publisher',
-    pwd='AMseams2023Q3',  # attention!, it expires every 3 month
+    pwd='AMseams2023Q4',  # attention!, it expires every 3 month
     catalog='SEAMS_DETECTIONS'
 )
 ```
