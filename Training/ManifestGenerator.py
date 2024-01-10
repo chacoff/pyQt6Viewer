@@ -6,7 +6,6 @@ J.
 
 import os
 import re
-import pandas as pd
 from tqdm import tqdm
 import yaml
 import numpy as np
@@ -24,6 +23,7 @@ def manifest_generator(param):
     total_lists: list = []
     png_count: int = 0
     bmp_count: int = 0
+    jpg_count: int = 0  # Added a counter for .jpg files
     xml_count: int = 0
     txt_count: int = 0
 
@@ -33,7 +33,10 @@ def manifest_generator(param):
             if dir_name.startswith("Lot_"):
                 lot_folder_path = os.path.join(root, dir_name)
                 for file in os.listdir(lot_folder_path):
-                    if file.endswith('.png'):
+                    if file.endswith('.jpg'):
+                        jpg_count += 1
+                        total_lists.append(os.path.join(dir_name, file))
+                    elif file.endswith('.png'):
                         png_count += 1
                         total_lists.append(os.path.join(dir_name, file))
                     elif file.endswith('.bmp'):
@@ -44,7 +47,7 @@ def manifest_generator(param):
                     elif file.endswith('.txt'):
                         txt_count += 1
 
-    print(f'> Images: {bmp_count + png_count}')
+    print(f'> Images: {bmp_count + png_count + jpg_count}')
     print(f'> Annotations *.txt: {txt_count}')
     print(f'> Annotations *.xml: {xml_count}')
 
@@ -139,7 +142,7 @@ def mover(param):
 
 if __name__ == "__main__":
     parameters = {
-        'base': 'F:\\00_Seams\\dataset\\training',
+        'base': r'C:\Users\AJMINO\Downloads\Dev\PySeamsDetection\Datasets\holes_dataset',
         'destination': 'Reference',
         'manifest': 'manifest.txt',
         'manifest_validation': 'validation.txt',
