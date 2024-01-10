@@ -11,6 +11,7 @@ def natural_sort_key(s):
 def count_images_and_xml(folder):
     png_count = 0
     bmp_count = 0
+    jpg_count = 0
     xml_count = 0
     txt_count = 0
     xml_found = False
@@ -25,15 +26,17 @@ def count_images_and_xml(folder):
                         png_count += 1
                     elif file.endswith('.bmp'):
                         bmp_count += 1
+                    elif file.endswith('.jpg'):
+                        jpg_count += 1
                     elif file.endswith('.xml'):
                         xml_count += 1
                         xml_found = True
                     elif file.endswith('.txt'):
                         txt_count += 1
 
-                if xml_found and (bmp_count+png_count) > txt_count:
+                if xml_found and (bmp_count+png_count+jpg_count) > txt_count:
                     print(f"Folder: {lot_folder_path}")
-                    print(f"Total Images: {bmp_count + png_count}")
+                    print(f"Total Images: {bmp_count + png_count + jpg_count}")
                     print(f"TXT annotations: {txt_count}")
                     print(f"XML file: {xml_count}")
                     print("-----------")
@@ -49,6 +52,7 @@ def count_images_and_xml(folder):
 
                 png_count = 0
                 bmp_count = 0
+                jpg_count = 0
                 xml_count = 0
                 txt_count = 0
                 xml_found = False
@@ -79,6 +83,7 @@ def find_duplicate_images(folder):
 def count_globals(folder):
     png_count = 0  #
     bmp_count = 0  # 10017
+    jpg_count = 0
     xml_count = 0  # 509
     txt_count = 0  # 10017
 
@@ -90,17 +95,21 @@ def count_globals(folder):
                     png_count += 1
                 elif file.endswith('.bmp'):
                     bmp_count += 1
+                elif file.endswith('.jpg'):
+                    jpg_count += 1
                 elif file.endswith('.xml'):
                     xml_count += 1
                 elif file.endswith('.txt'):
                     txt_count += 1
 
-    print(f'globals: {[png_count+bmp_count]}, {xml_count}, {txt_count}')
+    print(f'globals: {[png_count+bmp_count+jpg_count]}, {xml_count}, {txt_count}')
 
 
 if __name__ == "__main__":
 
-    folder_path = r'C:\Users\gomezja\PycharmProjects\00_dataset\training'
+    folder_path = r'C:\Users\AJMINO\Downloads\Dev\PySeamsDetection\Training\data\holes_dataset'
+    # find_duplicate_images(folder_path)
     count_images_and_xml(folder_path)
+    count_globals(folder_path)
 
 

@@ -1,5 +1,4 @@
 import os
-import glob
 import xml.etree.ElementTree as ET
 import numpy as np
 import time
@@ -93,7 +92,7 @@ class CVATYoloConverter:
 
 
 def main():
-    xml_dir: str = r'C:\Users\gomezja\PycharmProjects\00_dataset\training'
+    xml_dir: str = r'C:\Users\AJMINO\Downloads\Dev\PySeamsDetection\Training\data\holes_dataset'
 
     classes_encoding: dict = {
         'Seams': 0,
