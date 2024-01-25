@@ -209,10 +209,7 @@ class Process:
                                self.current_image_info["campaign"],
                                self.current_image_info["beam_id"],
                                self.current_image_info["n_images"],
-                               False]  # flag to save in low quality
-
-                    if self.save_all_images:
-                        payload[6] = True  # flag to save in low quality
+                               self.save_all_images]  # flag to save in low quality
 
                     if self.current_image_info['profile'] in self.interest_profiles and classification in self.classes_to_save:
                         self._buffer_images.queue(payload)
