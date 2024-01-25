@@ -145,6 +145,8 @@ class Process:
         self.base_saving_folder: str = str(params.get_value('Production', 'saving_folder'))
         self.save_all_images = ast.literal_eval(params.get_value('Production', 'save_all_images'))
         print(f'Save all images: {Bcolors.green}{self.save_all_images}{Bcolors.endc}')
+        if self.save_all_images:
+            self.classes_to_save.append('Beam') # workaround to save all...
 
         # current info
         self.current_image_info: Dict[str, Union[str, str, str, int, str, int, int, int]] = {
@@ -211,7 +213,6 @@ class Process:
 
                     if self.save_all_images:
                         payload[6] = True  # flag to save in low quality
-                        self.classes_to_save.append('Beam')  # it also saves now Beam-only images
 
                     if self.current_image_info['profile'] in self.interest_profiles and classification in self.classes_to_save:
                         self._buffer_images.queue(payload)
