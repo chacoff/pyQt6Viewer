@@ -4,7 +4,6 @@ basically i took the repo and i made available parameters such as score, confide
 J.
 """
 
-import cv2
 from cvuMaster.cvu.detector.yolov5 import Yolov5 as Yolov5Onnx
 
 

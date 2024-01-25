@@ -1,4 +1,3 @@
-import cv2
 from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget, QLabel, QPushButton, QHBoxLayout, \
     QFileDialog, QMainWindow, QSlider, QStatusBar, QTableWidget, QTableWidgetItem, QHeaderView
 from PyQt6.QtCore import Qt, QPointF, QDir, QSize, pyqtSignal, QFileInfo, QUrl
