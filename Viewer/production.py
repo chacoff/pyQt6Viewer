@@ -430,6 +430,8 @@ class SavingImages:
         self._thread = Thread(target=self.run)
         self.base_saving_folder: str = str(params.get_value('Production', 'saving_folder'))
         self.extension: str = 'jpg'
+        # 100*1000mm per beam for an average of 180 images => 555mm per frame (492 looks ok)
+        self._fov_height = 492 # camera vertical field of view (length of product seen inside an image in mm)
 
     def start(self):
         self._thread.start()
@@ -447,10 +449,11 @@ class SavingImages:
                                f'{beam_id}_' \
                                f'{_time.strftime("%Y_%m_%d_%H%M%S")}.{self.extension}'
                 else:
+                    position = n_images * self._fov_height # in mm
                     filename = f'{profile}_' \
                                 f'{campaign}_' \
                                 f'{beam_id}_' \
-                                f'WEB00{n_images}.{self.extension}'
+                                f'WEB_{position:5d}.{self.extension}'
 
                 full_path = os.path.join(self.base_saving_folder,
                                          profile,
