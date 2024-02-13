@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLa
 from PyQt6.QtCore import Qt, QPointF, QDir, QSize, pyqtSignal, QFileInfo, QUrl, QRectF
 from PyQt6.QtGui import QImage, QPixmap, QKeyEvent, QPainter, QPalette, QAction, QDesktopServices, QColor, QIcon, QPen, QPolygonF, QBrush
 import sys
+import cv2
 import numpy as np
 import os
 
