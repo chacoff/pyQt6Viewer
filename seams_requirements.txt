@@ -1,0 +1,72 @@
+altgraph==0.17.4
+beautifulsoup4==4.12.2
+brotlipy==0.7.0
+# certifi @ file:///C:/b/abs_36eb5mzhph/croot/certifi_1690232276943/work/certifi
+# cffi @ file:///C:/b/abs_49n3v2hyhr/croot/cffi_1670423218144/work
+chardet==5.2.0
+# charset-normalizer @ file:///tmp/build/80754af9/charset-normalizer_1630003229654/work
+colorama==0.4.6
+coloredlogs==15.0.1
+conda-pack==0.7.1
+contourpy==1.1.0
+# cryptography @ file:///C:/b/abs_13590mi9q9/croot/cryptography_1689373706078/work
+cycler==0.11.0
+filelock==3.12.2
+flatbuffers==23.5.26
+fonttools==4.42.0
+gdown==4.7.1
+humanfriendly==10.0
+# idna @ file:///C:/b/abs_bdhbebrioa/croot/idna_1666125572046/work
+importlib-metadata==6.8.0
+importlib-resources==6.0.1
+joblib==1.3.2
+kiwisolver==1.4.4
+matplotlib==3.7.2
+mkl-fft==1.3.6
+# mkl-random @ file:///C:/Users/dev-admin/mkl/mkl_random_1682977971003/work
+mkl-service==2.4.0
+mpmath==1.3.0
+# numpy @ file:///C:/b/abs_f6napi3n6e/croot/numpy_and_numpy_base_1691091651337/work
+onnx==1.14.0
+onnxruntime==1.15.1
+opencv-python==4.8.0.76
+packaging==23.1
+pandas==2.0.3
+pefile==2023.2.7
+Pillow==10.0.0
+plotly==5.16.1
+protobuf==4.24.1
+# pycparser @ file:///tmp/build/80754af9/pycparser_1636541352034/work
+pyinstaller==6.0.0
+pyinstaller-hooks-contrib==2023.9
+pyodbc==4.0.39
+# pyOpenSSL @ file:///C:/b/abs_08f38zyck4/croot/pyopenssl_1690225407403/work
+pyparsing==3.0.9
+PyQt6==6.5.2
+PyQt6-Qt6==6.5.2
+PyQt6-sip==13.5.2
+pyqtgraph==0.13.3
+pyreadline3==3.4.1
+# PySocks @ file:///C:/ci/pysocks_1605307512533/work
+python-dateutil==2.8.2
+pytz==2023.3
+pywin32-ctypes==0.2.2
+PyYAML==6.0.1
+# requests @ file:///C:/b/abs_316c2inijk/croot/requests_1690400295842/work
+scikit-learn==1.3.0
+scipy==1.11.2
+seaborn==0.12.2
+six==1.16.0
+soupsieve==2.4.1
+sympy==1.12
+tenacity==8.2.3
+threadpoolctl==3.2.0
+torch==1.11.0
+torchaudio==0.11.0
+torchvision==0.12.0
+tqdm==4.66.1
+# typing_extensions @ file:///C:/b/abs_213vg2cd1l/croot/typing_extensions_1690297804941/work
+tzdata==2023.3
+# urllib3 @ file:///C:/b/abs_889_loyqv4/croot/urllib3_1686163174463/work
+# win-inet-pton @ file:///C:/ci/win_inet_pton_1605306162074/work
+zipp==3.16.2

@@ -142,7 +142,7 @@ def mover(param):
 
 if __name__ == "__main__":
     parameters = {
-        'base': r'C:\Users\AJMINO\Downloads\Dev\PySeamsDetection\Datasets\holes_dataset',
+        'base': r'C:\Users\gomezja\OneDrive - ArcelorMittal\Documents\00_Dev\00_dataset\training',
         'destination': 'Reference',
         'manifest': 'manifest.txt',
         'manifest_validation': 'validation.txt',

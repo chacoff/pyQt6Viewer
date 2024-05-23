@@ -631,8 +631,8 @@ def run(
 
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', type=str, default='F:\\00_Seams\\dataset\\training\\seams.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', nargs='+', type=str, default='F:\\00_Seams\\PySeamsDetection\\Training\\runs\\train\\exp14\\weights\\best.pt', help='model.pt path(s)')
+    parser.add_argument('--data', type=str, default='C:\\Users\\gomezja\OneDrive - ArcelorMittal\\Documents\\00_Dev\\00_dataset\\training\\seams.yaml', help='dataset.yaml path')
+    parser.add_argument('--weights', nargs='+', type=str, default='runs\\train\\exp2\\weights\\best.pt', help='model.pt path(s)')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[768, 768], help='image (h, w)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
