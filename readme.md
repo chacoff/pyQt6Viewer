@@ -1,5 +1,3 @@
-# Seams detection TMB
-
 ## Introduction
 
 This repository provides a solution for detecting seams in H-beams during operations at TMB. 
