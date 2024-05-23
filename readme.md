@@ -66,47 +66,6 @@ START python production.py
 @echo ON
 ```
 
-## Database Credential
-
-Databases:
-
-H-engine is populating a MI database with the following credentials:
-
-```python
-db = SEAMS_INFO(
-    source='AZR-SQL-MIAUT',
-    user='SEAMS-DETECT_Publisher',
-    pwd='AMseams2023Q4',  # attention!, it expires every 3 month
-    catalog='SEAMS_DETECTIONS'
-)
-```
-
-The database is a SQL SERVER, the recommended library is MSOLEDBSQL.
-
-## Computers Credentials
-
-### Currently working computers:
-
-| PC type              | PC Name       | IP Address    | User             | Password    |
-|----------------------|---------------|---------------|------------------|-------------|
-| Seams production PC  | DESKTOP-seams | 10.28.100.15  | .\arcelormittal  | Arcelor**   |
-| Seams Station at AOB | CZC8317B48    | 10.26.100.218 | EUROPE\GRACRAOB  | AM@grd2018* |
-
-
-## Training the network
-
-### Seams station
-
-### CVAT: annotations
-
-The application used by Infoscribe for making annotations is installed on the Seams Station:
-
-```python
-host='http://czc8317b48:8080/'
-user='aob'
-pw='aob2023'
-```
-
 ## Production Deployment
 
 To deploy *H-engine*, in the Seams production PC, start by copying your environment in:
@@ -122,15 +81,6 @@ conda pack -n seams               # pack your environment
 tar -xzf my_env.tar.gz -C seams   # unpack your environment
 source seams/bin/activate         # activate your environment
 ```
- __TMB_SeamsRelease/ looks something like this:
-
-![H-engine for production](_readme/folders.png)
-
-where env/ is the environment with all the python packages and H_Processor/ is all the content from the folder Viewer/ of this repository.
-
-it is recommended to include the path in Windows *environment variables*:
-
-![environment variables](_readme/variables.png)
 
 ## Feedback and Support
 
